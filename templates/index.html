@@ -2,141 +2,6 @@
 <html>
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>ТАБАКМЕН</title>
-    <style>
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-            font-family: Arial, sans-serif;
-        }
-        body {
-            background: #000;
-            min-height: 100vh;
-            padding: 20px;
-        }
-        .header {
-            background: #000;
-            color: #ffd700;
-            padding: 20px;
-            text-align: center;
-            border-bottom: 2px solid #ffd700;
-        }
-        .header h1 {
-            font-size: 32px;
-            text-transform: uppercase;
-            letter-spacing: 2px;
-        }
-        .categories {
-            display: flex;
-            flex-wrap: wrap;
-            gap: 10px;
-            padding: 20px 0;
-        }
-        .category-btn {
-            background: #222;
-            color: #ffd700;
-            border: 1px solid #ffd700;
-            padding: 12px 20px;
-            border-radius: 30px;
-            font-size: 14px;
-            font-weight: bold;
-            cursor: pointer;
-        }
-        .category-btn:hover {
-            background: #333;
-        }
-        .products {
-            display: grid;
-            grid-template-columns: repeat(2, 1fr);
-            gap: 15px;
-            margin-bottom: 80px;
-        }
-        .product-card {
-            background: #111;
-            border: 1px solid #333;
-            border-radius: 10px;
-            padding: 10px;
-        }
-        .product-image {
-            height: 120px;
-            background: #222;
-            border-radius: 8px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            color: #ffd700;
-            font-size: 40px;
-        }
-        .product-name {
-            color: #fff;
-            margin: 10px 0 5px;
-        }
-        .product-price {
-            color: #ffd700;
-            font-size: 18px;
-            font-weight: bold;
-        }
-        .rare-btn {
-            position: fixed;
-            bottom: 20px;
-            left: 20px;
-            right: 20px;
-            background: #ffd700;
-            color: #000;
-            border: none;
-            padding: 16px;
-            border-radius: 50px;
-            font-size: 16px;
-            font-weight: bold;
-            cursor: pointer;
-            max-width: 300px;
-            margin: 0 auto;
-        }
-        .loading {
-            grid-column: span 2;
-            text-align: center;
-            color: #666;
-            padding: 40px;
-        }
-    </style>
-</head>
-<body>
-    <div class="header">
-        <h1>🚬 ТАБАКМЕН</h1>
-    </div>
-    
-    <div class="categories">
-        <button class="category-btn">Все</button>
-        {% for cat in categories %}
-        <button class="category-btn">{{ cat }}</button>
-        {% endfor %}
-    </div>
-    
-    <div class="products">
-        {% if products %}
-            {% for product in products %}
-            <div class="product-card">
-                <div class="product-image">📦</div>
-                <div class="product-name">{{ product.name }}</div>
-                <div class="product-price">{{ product.price }} ₽</div>
-            </div>
-            {% endfor %}
-        {% else %}
-            <div class="loading">🚬 Товары появятся скоро</div>
-        {% endif %}
-    </div>
-    
-    <button class="rare-btn" onclick="alert('Заявка отправлена!')">
-        🔥 Заказать редкое
-    </button>
-</body>
-</html>
-<!DOCTYPE html>
-<html>
-<head>
-    <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=yes">
     <title>ТАБАКМЕН</title>
     <style>
@@ -505,6 +370,7 @@
         </div>
     </div>
     
+    <!-- ЕДИНСТВЕННЫЙ БЛОК КАТЕГОРИЙ -->
     <div class="categories" id="categories">
         <button class="category-btn active" onclick="filterProducts('all')">Все</button>
         {% for category in categories %}
