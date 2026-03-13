@@ -133,3 +133,595 @@
     </button>
 </body>
 </html>
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=yes">
+    <title>ТАБАКМЕН</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+        }
+        
+        body {
+            background: #000000;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+        }
+        
+        .header {
+            background: #000000;
+            color: #ffd700;
+            padding: 16px;
+            text-align: center;
+            border-bottom: 2px solid #ffd700;
+            position: sticky;
+            top: 0;
+            z-index: 100;
+            box-shadow: 0 2px 10px rgba(255, 215, 0, 0.2);
+        }
+        
+        .header h1 {
+            font-size: 32px;
+            letter-spacing: 3px;
+            text-transform: uppercase;
+            font-weight: 900;
+            text-shadow: 0 0 15px rgba(255, 215, 0, 0.7);
+            margin-bottom: 5px;
+        }
+        
+        .header .subtitle {
+            font-size: 14px;
+            color: #ffd700;
+            margin-top: 5px;
+            opacity: 0.9;
+        }
+        
+        .categories {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+            padding: 15px;
+            background: #111;
+            border-bottom: 1px solid #333;
+            overflow-x: auto;
+            -webkit-overflow-scrolling: touch;
+            max-height: 200px;
+            overflow-y: auto;
+        }
+        
+        .category-btn {
+            background: #222;
+            color: #ffd700;
+            border: 1px solid #ffd700;
+            padding: 10px 20px;
+            border-radius: 25px;
+            font-size: 14px;
+            font-weight: 600;
+            cursor: pointer;
+            white-space: nowrap;
+            transition: all 0.3s;
+        }
+        
+        .category-btn:hover {
+            background: #333;
+            transform: translateY(-2px);
+        }
+        
+        .category-btn.active {
+            background: #ffd700;
+            color: #000;
+        }
+        
+        .search {
+            padding: 15px;
+            background: #111;
+            position: relative;
+        }
+        
+        .search input {
+            width: 100%;
+            padding: 12px;
+            background: #222;
+            border: 1px solid #333;
+            border-radius: 25px;
+            color: #ffd700;
+            font-size: 16px;
+            padding-right: 100px;
+        }
+        
+        .search input::placeholder {
+            color: #666;
+        }
+        
+        .search input:focus {
+            outline: none;
+            border-color: #ffd700;
+        }
+        
+        .reset-filters {
+            position: absolute;
+            right: 25px;
+            top: 22px;
+            background: #333;
+            color: #ffd700;
+            border: 1px solid #ffd700;
+            padding: 5px 12px;
+            border-radius: 20px;
+            font-size: 12px;
+            cursor: pointer;
+        }
+        
+        .reset-filters:hover {
+            background: #444;
+        }
+        
+        .products {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+            gap: 12px;
+            padding: 15px;
+            flex: 1;
+            margin-bottom: 80px;
+        }
+        
+        .product-card {
+            background: #111;
+            border-radius: 12px;
+            overflow: hidden;
+            border: 1px solid #333;
+            transition: transform 0.2s;
+        }
+        
+        .product-card:hover {
+            transform: translateY(-2px);
+            border-color: #ffd700;
+        }
+        
+        .product-image {
+            width: 100%;
+            height: 140px;
+            background: #222;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: #ffd700;
+            font-size: 40px;
+            border-bottom: 1px solid #333;
+        }
+        
+        .product-image img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+        
+        .product-info {
+            padding: 10px;
+        }
+        
+        .product-name {
+            color: #fff;
+            font-size: 14px;
+            font-weight: 500;
+            margin-bottom: 5px;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+        
+        .product-price {
+            color: #ffd700;
+            font-size: 18px;
+            font-weight: bold;
+        }
+        
+        .product-category {
+            color: #666;
+            font-size: 12px;
+            margin-top: 4px;
+        }
+        
+        .rare-order-btn {
+            position: fixed;
+            bottom: 20px;
+            left: 20px;
+            right: 20px;
+            width: calc(100% - 40px);
+            max-width: 300px;
+            margin: 0 auto;
+            background: #ffd700;
+            color: #000;
+            border: none;
+            padding: 16px;
+            border-radius: 50px;
+            font-size: 16px;
+            font-weight: bold;
+            text-transform: uppercase;
+            cursor: pointer;
+            box-shadow: 0 4px 15px rgba(255, 215, 0, 0.3);
+            transition: all 0.3s;
+            z-index: 1000;
+        }
+        
+        .rare-order-btn:active {
+            transform: scale(0.95);
+        }
+        
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0,0,0,0.95);
+            z-index: 2000;
+            padding: 20px;
+            align-items: center;
+            justify-content: center;
+        }
+        
+        .modal.active {
+            display: flex;
+        }
+        
+        .modal-content {
+            background: #111;
+            border: 2px solid #ffd700;
+            border-radius: 20px;
+            padding: 25px;
+            width: 100%;
+            max-width: 400px;
+        }
+        
+        .modal-content h2 {
+            color: #ffd700;
+            margin-bottom: 20px;
+            text-align: center;
+        }
+        
+        .modal-content input,
+        .modal-content textarea {
+            width: 100%;
+            padding: 12px;
+            margin-bottom: 15px;
+            background: #222;
+            border: 1px solid #333;
+            border-radius: 10px;
+            color: #ffd700;
+            font-size: 16px;
+        }
+        
+        .modal-content input:focus,
+        .modal-content textarea:focus {
+            outline: none;
+            border-color: #ffd700;
+        }
+        
+        .modal-content textarea {
+            min-height: 100px;
+            resize: vertical;
+        }
+        
+        .modal-buttons {
+            display: flex;
+            gap: 10px;
+        }
+        
+        .modal-buttons button {
+            flex: 1;
+            padding: 12px;
+            border: none;
+            border-radius: 10px;
+            font-size: 16px;
+            font-weight: bold;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+        
+        .submit-btn {
+            background: #ffd700;
+            color: #000;
+        }
+        
+        .submit-btn:hover {
+            background: #ffed4a;
+        }
+        
+        .cancel-btn {
+            background: #333;
+            color: #fff;
+        }
+        
+        .cancel-btn:hover {
+            background: #444;
+        }
+        
+        .notification {
+            position: fixed;
+            bottom: 90px;
+            left: 20px;
+            right: 20px;
+            background: #ffd700;
+            color: #000;
+            padding: 15px;
+            border-radius: 10px;
+            text-align: center;
+            font-weight: bold;
+            animation: slideUp 0.3s;
+            z-index: 1500;
+        }
+        
+        @keyframes slideUp {
+            from {
+                transform: translateY(100%);
+                opacity: 0;
+            }
+            to {
+                transform: translateY(0);
+                opacity: 1;
+            }
+        }
+        
+        .loading {
+            grid-column: 1/-1;
+            text-align: center;
+            color: #666;
+            padding: 40px;
+            font-size: 16px;
+        }
+        
+        .error {
+            grid-column: 1/-1;
+            text-align: center;
+            color: #ff4444;
+            padding: 40px;
+            font-size: 16px;
+        }
+        
+        @keyframes slideIn {
+            from {
+                transform: translateX(100%);
+                opacity: 0;
+            }
+            to {
+                transform: translateX(0);
+                opacity: 1;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <h1>🚬 ТАБАКМЕН</h1>
+        <div class="subtitle">
+            кальяны · жидкости · поды · сигареты
+        </div>
+    </div>
+    
+    <div class="categories" id="categories">
+        <button class="category-btn active" onclick="filterProducts('all')">Все</button>
+        {% for category in categories %}
+        <button class="category-btn" onclick="filterProducts('{{ category.name }}')">{{ category.name }}</button>
+        {% endfor %}
+    </div>
+    
+    <div class="search">
+        <input type="text" id="search-input" placeholder="🔍 Поиск товаров..." oninput="searchProducts(this.value)">
+        <span class="reset-filters" onclick="resetFilters()" style="display: none;" id="reset-btn">Сбросить</span>
+    </div>
+    
+    <div class="products" id="products-container">
+        {% if products %}
+            {% for product in products %}
+            <div class="product-card" 
+                 data-category="{{ product.category.name }}" 
+                 data-name="{{ product.name.lower() }}"
+                 data-id="{{ product.id }}">
+                <div class="product-image">
+                    {% if product.image_path %}
+                        <img src="{{ product.image_path }}" alt="{{ product.name }}">
+                    {% else %}
+                        📦
+                    {% endif %}
+                </div>
+                <div class="product-info">
+                    <div class="product-name">{{ product.name }}</div>
+                    <div class="product-price">{{ product.price }} ₽</div>
+                    <div class="product-category">{{ product.category.name }}</div>
+                </div>
+            </div>
+            {% endfor %}
+        {% else %}
+            <div class="loading">
+                🚬 Товары появятся скоро!
+            </div>
+        {% endif %}
+    </div>
+    
+    <button class="rare-order-btn" onclick="openRareOrderModal()">
+        🔥 Заказать редкое 🔥
+    </button>
+    
+    <div class="modal" id="rare-order-modal">
+        <div class="modal-content">
+            <h2>🔥 Редкий заказ</h2>
+            <input type="text" id="customer-contact" placeholder="Твой Telegram @username" value="@huhmek26">
+            <textarea id="product-request" placeholder="Что именно ты ищешь? Опиши подробнее..."></textarea>
+            <div class="modal-buttons">
+                <button class="cancel-btn" onclick="closeRareOrderModal()">Отмена</button>
+                <button class="submit-btn" onclick="submitRareOrder()">Отправить</button>
+            </div>
+        </div>
+    </div>
+    
+    <script>
+        let currentFilter = 'all';
+        let searchQuery = '';
+        
+        function filterProducts(category) {
+            currentFilter = category;
+            applyFilters();
+            
+            document.querySelectorAll('.category-btn').forEach(btn => {
+                btn.classList.remove('active');
+            });
+            event.target.classList.add('active');
+            
+            document.getElementById('reset-btn').style.display = 'inline-block';
+        }
+        
+        function searchProducts(query) {
+            searchQuery = query.toLowerCase();
+            applyFilters();
+            
+            if (query.length > 0) {
+                document.getElementById('reset-btn').style.display = 'inline-block';
+            } else if (currentFilter === 'all') {
+                document.getElementById('reset-btn').style.display = 'none';
+            }
+        }
+        
+        function applyFilters() {
+            const products = document.querySelectorAll('.product-card');
+            let visibleCount = 0;
+            
+            products.forEach(product => {
+                const category = product.dataset.category;
+                const name = product.dataset.name;
+                
+                const categoryMatch = currentFilter === 'all' || category === currentFilter;
+                const searchMatch = searchQuery === '' || name.includes(searchQuery);
+                
+                if (categoryMatch && searchMatch) {
+                    product.style.display = '';
+                    visibleCount++;
+                } else {
+                    product.style.display = 'none';
+                }
+            });
+            
+            const container = document.getElementById('products-container');
+            let noProductsMsg = document.getElementById('no-products-msg');
+            
+            if (visibleCount === 0) {
+                if (!noProductsMsg) {
+                    noProductsMsg = document.createElement('div');
+                    noProductsMsg.id = 'no-products-msg';
+                    noProductsMsg.className = 'loading';
+                    noProductsMsg.textContent = '😢 Ничего не найдено';
+                    container.appendChild(noProductsMsg);
+                }
+            } else if (noProductsMsg) {
+                noProductsMsg.remove();
+            }
+        }
+        
+        function resetFilters() {
+            currentFilter = 'all';
+            searchQuery = '';
+            document.getElementById('search-input').value = '';
+            applyFilters();
+            
+            document.querySelectorAll('.category-btn').forEach(btn => {
+                btn.classList.remove('active');
+                if (btn.textContent === 'Все') {
+                    btn.classList.add('active');
+                }
+            });
+            
+            document.getElementById('reset-btn').style.display = 'none';
+        }
+        
+        function openRareOrderModal() {
+            document.getElementById('rare-order-modal').classList.add('active');
+        }
+        
+        function closeRareOrderModal() {
+            document.getElementById('rare-order-modal').classList.remove('active');
+            document.getElementById('product-request').value = '';
+        }
+        
+        function submitRareOrder() {
+            const contact = document.getElementById('customer-contact').value;
+            const request = document.getElementById('product-request').value;
+            
+            if (!request) {
+                alert('Опиши, что хочешь найти!');
+                return;
+            }
+            
+            const submitBtn = event.target;
+            const originalText = submitBtn.textContent;
+            submitBtn.textContent = 'Отправка...';
+            submitBtn.disabled = true;
+            
+            fetch('/rare-order', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                    contact: contact,
+                    request: request
+                })
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    closeRareOrderModal();
+                    showNotification('✅ Заявка отправлена! Мы свяжемся с тобой');
+                    document.getElementById('product-request').value = '';
+                } else {
+                    showNotification('❌ Ошибка, попробуй позже');
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                showNotification('❌ Ошибка соединения');
+            })
+            .finally(() => {
+                submitBtn.textContent = originalText;
+                submitBtn.disabled = false;
+            });
+        }
+        
+        function showNotification(text) {
+            const notification = document.createElement('div');
+            notification.className = 'notification';
+            notification.textContent = text;
+            document.body.appendChild(notification);
+            
+            setTimeout(() => {
+                notification.remove();
+            }, 3000);
+        }
+        
+        document.getElementById('rare-order-modal').addEventListener('click', function(e) {
+            if (e.target === this) {
+                closeRareOrderModal();
+            }
+        });
+        
+        document.addEventListener('keydown', function(e) {
+            if (e.key === 'Escape') {
+                closeRareOrderModal();
+            }
+        });
+        
+        document.addEventListener('DOMContentLoaded', function() {
+            const products = document.querySelectorAll('.product-card');
+            if (products.length === 0) {
+                document.getElementById('products-container').innerHTML = 
+                    '<div class="loading">🚬 Товары появятся скоро!</div>';
+            }
+        });
+    </script>
+</body>
+</html>
