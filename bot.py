@@ -1,19 +1,34 @@
 # bot.py
 from telegram import Update, InlineKeyboardButton, InlineKeyboardMarkup
 from telegram.ext import Application, CommandHandler, CallbackQueryHandler, ContextTypes
-from config import BOT_TOKEN, SUPPORT_USERNAME
+from config import BOT_TOKEN, SUPPORT_USERNAME, ADMIN_ID
 import logging
+
+# Если добавил второго админа в config.py, раскомментируй строку ниже
+# from config import ADMIN_ID_2
 
 # Включаем логирование
 logging.basicConfig(format='%(asctime)s - %(name)s - %(levelname)s - %(message)s', level=logging.INFO)
 
+# Функция проверки админа
+def is_admin(user_id):
+    # Проверяем главного админа
+    if user_id == ADMIN_ID:
+        return True
+    # Если есть второй админ - проверяем и его (раскомментируй когда понадобится)
+    # if user_id == ADMIN_ID_2:
+    #     return True
+    return False
+
 # Команда /start
 async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    # Кнопки: магазин, канал, поддержка
+    user_id = update.effective_user.id
+    
+    # Основные кнопки для всех
     keyboard = [
         [InlineKeyboardButton(
             "🛍 Открыть магазин", 
-            url="https://tabakman.vercel.app"  # ИСПРАВЛЕНО
+            url="https://tabakman.vercel.app"
         )],
         [InlineKeyboardButton(
             "📢 Наш канал", 
@@ -21,6 +36,13 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
         )],
         [InlineKeyboardButton("📞 Техподдержка", callback_data='support')]
     ]
+    
+    # Если пользователь админ - добавляем кнопку админки
+    if is_admin(user_id):
+        keyboard.append([InlineKeyboardButton(
+            "⚙️ Админка", 
+            url="https://tabakman.vercel.app/admin"
+        )])
     
     reply_markup = InlineKeyboardMarkup(keyboard)
     
@@ -51,11 +73,13 @@ async def button_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
         )
     
     elif query.data == 'back_to_main':
-        # Возвращаем главное меню с тремя кнопками
+        user_id = update.effective_user.id
+        
+        # Основные кнопки для всех
         keyboard = [
             [InlineKeyboardButton(
                 "🛍 Открыть магазин", 
-                url="https://tabakman.vercel.app"  # ИСПРАВЛЕНО
+                url="https://tabakman.vercel.app"
             )],
             [InlineKeyboardButton(
                 "📢 Наш канал", 
@@ -63,6 +87,13 @@ async def button_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
             )],
             [InlineKeyboardButton("📞 Техподдержка", callback_data='support')]
         ]
+        
+        # Если пользователь админ - добавляем кнопку админки
+        if is_admin(user_id):
+            keyboard.append([InlineKeyboardButton(
+                "⚙️ Админка", 
+                url="https://tabakman.vercel.app/admin"
+            )])
         
         reply_markup = InlineKeyboardMarkup(keyboard)
         
@@ -81,7 +112,8 @@ def main():
     app.add_handler(CallbackQueryHandler(button_handler))
     
     print("🤖 Бот запущен! Нажми Ctrl+C для остановки.")
-    print("📢 Кнопка с каналом добавлена: @TABAKMAN_tgk")
+    print(f"📢 Кнопка с каналом добавлена: @TABAKMAN_tgk")
+    print(f"👑 Кнопка админки будет видна админам")
     app.run_polling()
 
 if __name__ == '__main__':
