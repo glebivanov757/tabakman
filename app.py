@@ -133,7 +133,7 @@ def delete_product(product_id):
         db.session.commit()
     return jsonify({'success': True})
 
-# Заявки
+# Получение заявок
 @app.route('/admin/orders')
 def get_orders():
     if not session.get('admin'):
@@ -147,18 +147,30 @@ def get_orders():
         'created_at': o.created_at.strftime('%d.%m.%Y %H:%M')
     } for o in orders])
 
+# Заказ редкого товара (ИСПРАВЛЕНО)
 @app.route('/rare-order', methods=['POST'])
 def rare_order():
     try:
         data = request.json
+        print("📝 Получен заказ:", data)
+        
+        if not data.get('request'):
+            return jsonify({'success': False, 'error': 'Пустой запрос'}), 400
+        
         order = RareOrder(
             customer_contact=data.get('contact', 'Не указан'),
             product_request=data.get('request', '')
         )
         db.session.add(order)
         db.session.commit()
+        
+        print(f"🔔 Новая заявка! {order.customer_contact} хочет: {order.product_request}")
+        
         return jsonify({'success': True})
+    
     except Exception as e:
+        print("❌ Ошибка при создании заявки:", e)
+        db.session.rollback()
         return jsonify({'success': False, 'error': str(e)}), 500
 
 if __name__ == '__main__':
