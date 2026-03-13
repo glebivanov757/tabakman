@@ -13,7 +13,7 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
     keyboard = [
         [InlineKeyboardButton(
             "🛍 Открыть магазин", 
-            url="http://127.0.0.1:5000"
+            url="https://tabakman.vercel.app"  # ИСПРАВЛЕНО
         )],
         [InlineKeyboardButton(
             "📢 Наш канал", 
@@ -55,7 +55,7 @@ async def button_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
         keyboard = [
             [InlineKeyboardButton(
                 "🛍 Открыть магазин", 
-                url="https://tabakman.vercel.app/"
+                url="https://tabakman.vercel.app"  # ИСПРАВЛЕНО
             )],
             [InlineKeyboardButton(
                 "📢 Наш канал", 
