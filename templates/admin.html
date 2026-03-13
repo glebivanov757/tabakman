@@ -439,7 +439,7 @@
     <div class="orders-section">
         <h2>📝 Заявки на редкие товары</h2>
         
-        <div>
+        <div style="margin-bottom: 20px;">
             <button class="tab-btn active" onclick="showTab('new')">🆕 Новые</button>
             <button class="tab-btn" onclick="showTab('completed')">✅ Выполненные</button>
         </div>
@@ -557,20 +557,26 @@
         }
         
         function completeOrder(id) {
-            fetch(`/admin/order/${id}/complete`, {
-                method: 'POST'
-            })
-            .then(response => response.json())
-            .then(data => {
-                if (data.success) {
-                    showNotification('✅ Заявка отмечена как выполненная');
-                    loadOrders();
-                }
-            });
+            if (confirm('Отметить заявку как выполненную?')) {
+                fetch(`/admin/order/${id}/complete`, {
+                    method: 'POST'
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        showNotification('✅ Заявка отмечена как выполненная');
+                        loadOrders();
+                    }
+                })
+                .catch(error => {
+                    console.error('Error:', error);
+                    alert('Ошибка при обновлении статуса');
+                });
+            }
         }
         
         function deleteOrder(id) {
-            if (confirm('Удалить заявку?')) {
+            if (confirm('Точно удалить заявку?')) {
                 fetch(`/admin/order/${id}/delete`, {
                     method: 'POST'
                 })
@@ -580,6 +586,10 @@
                         showNotification('❌ Заявка удалена');
                         loadOrders();
                     }
+                })
+                .catch(error => {
+                    console.error('Error:', error);
+                    alert('Ошибка при удалении');
                 });
             }
         }

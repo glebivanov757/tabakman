@@ -147,7 +147,39 @@ def get_orders():
         'created_at': o.created_at.strftime('%d.%m.%Y %H:%M')
     } for o in orders])
 
-# Заказ редкого товара (ИСПРАВЛЕНО)
+# Обновление статуса заявки
+@app.route('/admin/order/<int:order_id>/complete', methods=['POST'])
+def complete_order(order_id):
+    if not session.get('admin'):
+        return jsonify({'error': 'Не авторизован'}), 403
+    
+    try:
+        order = RareOrder.query.get(order_id)
+        if order:
+            order.status = 'выполнено'
+            db.session.commit()
+            return jsonify({'success': True})
+        return jsonify({'success': False, 'error': 'Заявка не найдена'}), 404
+    except Exception as e:
+        return jsonify({'success': False, 'error': str(e)}), 500
+
+# Удаление заявки
+@app.route('/admin/order/<int:order_id>/delete', methods=['POST'])
+def delete_order(order_id):
+    if not session.get('admin'):
+        return jsonify({'error': 'Не авторизован'}), 403
+    
+    try:
+        order = RareOrder.query.get(order_id)
+        if order:
+            db.session.delete(order)
+            db.session.commit()
+            return jsonify({'success': True})
+        return jsonify({'success': False, 'error': 'Заявка не найдена'}), 404
+    except Exception as e:
+        return jsonify({'success': False, 'error': str(e)}), 500
+
+# Заказ редкого товара
 @app.route('/rare-order', methods=['POST'])
 def rare_order():
     try:
