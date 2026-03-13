@@ -4,21 +4,8 @@ from telegram.ext import Application, CommandHandler, CallbackQueryHandler, Cont
 from config import BOT_TOKEN, SUPPORT_USERNAME, ADMIN_ID
 import logging
 
-# Если добавил второго админа в config.py, раскомментируй строку ниже
-# from config import ADMIN_ID_2
-
 # Включаем логирование
 logging.basicConfig(format='%(asctime)s - %(name)s - %(levelname)s - %(message)s', level=logging.INFO)
-
-# Функция проверки админа
-def is_admin(user_id):
-    # Проверяем главного админа
-    if user_id == ADMIN_ID:
-        return True
-    # Если есть второй админ - проверяем и его (раскомментируй когда понадобится)
-    # if user_id == ADMIN_ID_2:
-    #     return True
-    return False
 
 # Команда /start
 async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
@@ -37,8 +24,8 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
         [InlineKeyboardButton("📞 Техподдержка", callback_data='support')]
     ]
     
-    # Если пользователь админ - добавляем кнопку админки
-    if is_admin(user_id):
+    # Если это админ - добавляем маленькую кнопку
+    if user_id == ADMIN_ID:
         keyboard.append([InlineKeyboardButton(
             "⚙️ Админка", 
             url="https://tabakman.vercel.app/admin"
@@ -88,8 +75,8 @@ async def button_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
             [InlineKeyboardButton("📞 Техподдержка", callback_data='support')]
         ]
         
-        # Если пользователь админ - добавляем кнопку админки
-        if is_admin(user_id):
+        # Если это админ - добавляем маленькую кнопку
+        if user_id == ADMIN_ID:
             keyboard.append([InlineKeyboardButton(
                 "⚙️ Админка", 
                 url="https://tabakman.vercel.app/admin"
@@ -113,7 +100,7 @@ def main():
     
     print("🤖 Бот запущен! Нажми Ctrl+C для остановки.")
     print(f"📢 Кнопка с каналом добавлена: @TABAKMAN_tgk")
-    print(f"👑 Кнопка админки будет видна админам")
+    print(f"👑 Кнопка админки будет видна только пользователю с ID: {ADMIN_ID}")
     app.run_polling()
 
 if __name__ == '__main__':
