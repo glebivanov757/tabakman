@@ -212,7 +212,7 @@
             resize: vertical;
         }
         
-        .modal-content input[type="text"] {
+        .modal-content input[type="file"] {
             padding: 10px;
             color: #fff;
         }
@@ -421,8 +421,8 @@
         {% for product in products %}
         <div class="product-card" id="product-{{ product.id }}">
             <div class="product-image">
-                {% if product.image_path %}
-                    <img src="{{ product.image_path }}" alt="{{ product.name }}">
+                {% if product.image_base64 %}
+                    <img src="data:image/jpeg;base64,{{ product.image_base64 }}" alt="{{ product.name }}">
                 {% else %}
                     📦
                 {% endif %}
@@ -464,7 +464,7 @@
             <h2>➕ Новый товар</h2>
             
             <div class="info-text">
-                📸 Инструкция: 1. Загрузи фото в Telegram канал → 2. Скопируй ссылку → 3. Вставь ниже
+                📸 Фото сохраняется прямо в базу данных
             </div>
             
             <input type="text" id="product-name" placeholder="Название товара" required>
@@ -479,8 +479,8 @@
             
             <textarea id="product-description" placeholder="Описание товара (необязательно)"></textarea>
             
-            <!-- Вместо загрузки файла - поле для ссылки из Telegram -->
-            <input type="text" id="product-photo-link" placeholder="Ссылка на фото из Telegram (https://t.me/...)">
+            <!-- Загрузка фото в base64 -->
+            <input type="file" id="product-photo" accept="image/*">
             
             <div class="modal-buttons">
                 <button class="close-btn" onclick="closeAddModal()">Отмена</button>
@@ -624,14 +624,13 @@
             document.getElementById('product-name').value = '';
             document.getElementById('product-price').value = '';
             document.getElementById('product-description').value = '';
-            document.getElementById('product-photo-link').value = '';
+            document.getElementById('product-photo').value = '';
         }
         
         function saveProduct() {
             const name = document.getElementById('product-name').value;
             const category = document.getElementById('product-category').value;
             const price = document.getElementById('product-price').value;
-            const photoLink = document.getElementById('product-photo-link').value;
             
             if (!name || !category || !price) {
                 alert('Заполните название, категорию и цену товара!');
@@ -643,7 +642,11 @@
             formData.append('category', category);
             formData.append('price', price);
             formData.append('description', document.getElementById('product-description').value);
-            formData.append('photo_link', photoLink);
+            
+            const photo = document.getElementById('product-photo').files[0];
+            if (photo) {
+                formData.append('photo', photo);
+            }
             
             const saveBtn = event.target;
             const originalText = saveBtn.textContent;

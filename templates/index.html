@@ -370,7 +370,6 @@
         </div>
     </div>
     
-    <!-- ЕДИНСТВЕННЫЙ БЛОК КАТЕГОРИЙ -->
     <div class="categories" id="categories">
         <button class="category-btn active" onclick="filterProducts('all')">Все</button>
         {% for category in categories %}
@@ -391,8 +390,8 @@
                  data-name="{{ product.name.lower() }}"
                  data-id="{{ product.id }}">
                 <div class="product-image">
-                    {% if product.image_path %}
-                        <img src="{{ product.image_path }}" alt="{{ product.name }}">
+                    {% if product.image_base64 %}
+                        <img src="data:image/jpeg;base64,{{ product.image_base64 }}" alt="{{ product.name }}">
                     {% else %}
                         📦
                     {% endif %}

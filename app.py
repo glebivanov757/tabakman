@@ -1,12 +1,14 @@
 from flask import Flask, render_template, jsonify, request, session, redirect
 from flask_sqlalchemy import SQLAlchemy
 from datetime import datetime
+import base64
 import os
 
 app = Flask(__name__)
 app.config['SECRET_KEY'] = 'tabakmen-secret-key-2024'
 app.config['SQLALCHEMY_DATABASE_URI'] = os.getenv('DATABASE_URL', 'sqlite:///tabakmen.db')
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
+app.config['MAX_CONTENT_LENGTH'] = 16 * 1024 * 1024  # 16MB
 
 db = SQLAlchemy(app)
 
@@ -21,7 +23,7 @@ class Category(db.Model):
     
     products = db.relationship('Product', backref='category', lazy=True)
 
-# Модель товара
+# Модель товара с base64 фото
 class Product(db.Model):
     __tablename__ = 'products'
     id = db.Column(db.Integer, primary_key=True)
@@ -29,7 +31,7 @@ class Product(db.Model):
     category_id = db.Column(db.Integer, db.ForeignKey('categories.id'))
     price = db.Column(db.Float, nullable=False)
     description = db.Column(db.Text, default='')
-    image_path = db.Column(db.String(500))  # Здесь будет ссылка из Telegram
+    image_base64 = db.Column(db.Text, default='')  # Здесь будет фото в base64
     in_stock = db.Column(db.Boolean, default=True)
     created_at = db.Column(db.DateTime, default=datetime.now)
 
@@ -103,7 +105,7 @@ def admin_categories():
         'products_count': len(c.products)
     } for c in categories])
 
-# Добавление товара со ссылкой на фото из Telegram
+# Добавление товара с фото в base64
 @app.route('/admin/add', methods=['POST'])
 def add_product():
     if not session.get('admin'):
@@ -117,11 +119,16 @@ def add_product():
             description=request.form.get('description', '')
         )
         
-        # Сохраняем ссылку на фото из Telegram
-        photo_link = request.form.get('photo_link', '')
-        if photo_link:
-            product.image_path = photo_link
-            print(f"✅ Ссылка на фото сохранена: {photo_link}")
+        # Конвертируем фото в base64
+        if 'photo' in request.files:
+            photo = request.files['photo']
+            if photo and photo.filename:
+                # Читаем файл и конвертируем в base64
+                photo_data = photo.read()
+                photo_base64 = base64.b64encode(photo_data).decode('utf-8')
+                # Сохраняем в базу
+                product.image_base64 = photo_base64
+                print(f"✅ Фото сконвертировано в base64, размер: {len(photo_base64)} символов")
         
         db.session.add(product)
         db.session.commit()
