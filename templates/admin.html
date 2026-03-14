@@ -212,7 +212,7 @@
             resize: vertical;
         }
         
-        .modal-content input[type="file"] {
+        .modal-content input[type="text"] {
             padding: 10px;
             color: #fff;
         }
@@ -421,8 +421,8 @@
         {% for product in products %}
         <div class="product-card" id="product-{{ product.id }}">
             <div class="product-image">
-                {% if product.image_base64 %}
-                    <img src="data:image/jpeg;base64,{{ product.image_base64 }}" alt="{{ product.name }}">
+                {% if product.image_url %}
+                    <img src="{{ product.image_url }}" alt="{{ product.name }}">
                 {% else %}
                     📦
                 {% endif %}
@@ -464,7 +464,7 @@
             <h2>➕ Новый товар</h2>
             
             <div class="info-text">
-                📸 Фото сохраняется прямо в базу данных
+                📸 Вставь ссылку на фото (Google Диск, Яндекс.Диск, любой хостинг)
             </div>
             
             <input type="text" id="product-name" placeholder="Название товара" required>
@@ -479,8 +479,8 @@
             
             <textarea id="product-description" placeholder="Описание товара (необязательно)"></textarea>
             
-            <!-- Загрузка фото в base64 -->
-            <input type="file" id="product-photo" accept="image/*">
+            <!-- Поле для ссылки на фото -->
+            <input type="text" id="product-image-url" placeholder="Ссылка на фото (https://...)">
             
             <div class="modal-buttons">
                 <button class="close-btn" onclick="closeAddModal()">Отмена</button>
@@ -624,13 +624,14 @@
             document.getElementById('product-name').value = '';
             document.getElementById('product-price').value = '';
             document.getElementById('product-description').value = '';
-            document.getElementById('product-photo').value = '';
+            document.getElementById('product-image-url').value = '';
         }
         
         function saveProduct() {
             const name = document.getElementById('product-name').value;
             const category = document.getElementById('product-category').value;
             const price = document.getElementById('product-price').value;
+            const imageUrl = document.getElementById('product-image-url').value;
             
             if (!name || !category || !price) {
                 alert('Заполните название, категорию и цену товара!');
@@ -642,11 +643,7 @@
             formData.append('category', category);
             formData.append('price', price);
             formData.append('description', document.getElementById('product-description').value);
-            
-            const photo = document.getElementById('product-photo').files[0];
-            if (photo) {
-                formData.append('photo', photo);
-            }
+            formData.append('image_url', imageUrl);
             
             const saveBtn = event.target;
             const originalText = saveBtn.textContent;
