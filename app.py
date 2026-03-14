@@ -29,7 +29,7 @@ class Product(db.Model):
     category_id = db.Column(db.Integer, db.ForeignKey('categories.id'))
     price = db.Column(db.Float, nullable=False)
     description = db.Column(db.Text, default='')
-    image_path = db.Column(db.String(500))
+    image_path = db.Column(db.String(500))  # Здесь будет ссылка из Telegram
     in_stock = db.Column(db.Boolean, default=True)
     created_at = db.Column(db.DateTime, default=datetime.now)
 
@@ -57,7 +57,7 @@ with app.app_context():
         for cat in categories:
             db.session.add(Category(name=cat))
         db.session.commit()
-    print("✅ База данных PostgreSQL готова!")
+    print("✅ База данных готова!")
 
 # Главная страница
 @app.route('/')
@@ -103,7 +103,7 @@ def admin_categories():
         'products_count': len(c.products)
     } for c in categories])
 
-# Добавление товара
+# Добавление товара со ссылкой на фото из Telegram
 @app.route('/admin/add', methods=['POST'])
 def add_product():
     if not session.get('admin'):
@@ -116,10 +116,21 @@ def add_product():
             price=float(request.form['price']),
             description=request.form.get('description', '')
         )
+        
+        # Сохраняем ссылку на фото из Telegram
+        photo_link = request.form.get('photo_link', '')
+        if photo_link:
+            product.image_path = photo_link
+            print(f"✅ Ссылка на фото сохранена: {photo_link}")
+        
         db.session.add(product)
         db.session.commit()
+        
         return jsonify({'success': True, 'id': product.id})
+        
     except Exception as e:
+        print(f"❌ Ошибка при добавлении товара: {e}")
+        db.session.rollback()
         return jsonify({'success': False, 'error': str(e)}), 500
 
 # Удаление товара
@@ -127,11 +138,19 @@ def add_product():
 def delete_product(product_id):
     if not session.get('admin'):
         return jsonify({'error': 'Не авторизован'}), 403
-    product = Product.query.get(product_id)
-    if product:
-        db.session.delete(product)
-        db.session.commit()
-    return jsonify({'success': True})
+    
+    try:
+        product = Product.query.get(product_id)
+        if product:
+            db.session.delete(product)
+            db.session.commit()
+            print(f"✅ Товар удален: {product.name}")
+        
+        return jsonify({'success': True})
+    
+    except Exception as e:
+        print(f"❌ Ошибка при удалении: {e}")
+        return jsonify({'success': False, 'error': str(e)}), 500
 
 # Получение заявок
 @app.route('/admin/orders')

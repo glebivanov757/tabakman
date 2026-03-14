@@ -7,6 +7,10 @@ import logging
 # Включаем логирование
 logging.basicConfig(format='%(asctime)s - %(name)s - %(levelname)s - %(message)s', level=logging.INFO)
 
+# Функция проверки админа
+def is_admin(user_id):
+    return user_id == ADMIN_ID
+
 # Команда /start
 async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
     user_id = update.effective_user.id
@@ -24,8 +28,8 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
         [InlineKeyboardButton("📞 Техподдержка", callback_data='support')]
     ]
     
-    # Если это админ - добавляем маленькую кнопку
-    if user_id == ADMIN_ID:
+    # Если пользователь админ - добавляем кнопку админки
+    if is_admin(user_id):
         keyboard.append([InlineKeyboardButton(
             "⚙️ Админка", 
             url="https://tabakman.vercel.app/admin"
@@ -75,8 +79,8 @@ async def button_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
             [InlineKeyboardButton("📞 Техподдержка", callback_data='support')]
         ]
         
-        # Если это админ - добавляем маленькую кнопку
-        if user_id == ADMIN_ID:
+        # Если пользователь админ - добавляем кнопку админки
+        if is_admin(user_id):
             keyboard.append([InlineKeyboardButton(
                 "⚙️ Админка", 
                 url="https://tabakman.vercel.app/admin"
@@ -100,7 +104,7 @@ def main():
     
     print("🤖 Бот запущен! Нажми Ctrl+C для остановки.")
     print(f"📢 Кнопка с каналом добавлена: @TABAKMAN_tgk")
-    print(f"👑 Кнопка админки будет видна только пользователю с ID: {ADMIN_ID}")
+    print(f"👑 Кнопка админки будет видна админам")
     app.run_polling()
 
 if __name__ == '__main__':
