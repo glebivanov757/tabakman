@@ -6,8 +6,24 @@ import os
 
 app = Flask(__name__)
 app.config['SECRET_KEY'] = 'tabakmen-secret-key-2024'
-# Используем переменную окружения для базы данных
-app.config['SQLALCHEMY_DATABASE_URI'] = os.getenv('DATABASE_URL', 'sqlite:///tabakmen.db')
+
+# Формируем строку подключения из переменных окружения
+DB_HOST = os.getenv('PGHOST')
+DB_NAME = os.getenv('PGDATABASE')
+DB_USER = os.getenv('PGUSER')
+# Пароль уже с URL-encode (подчеркивание заменено на %5F)
+DB_PASSWORD = os.getenv('PGPASSWORD')
+DB_PORT = os.getenv('PGPORT', '5432')
+
+# Собираем DATABASE_URL вручную
+if DB_HOST and DB_NAME and DB_USER and DB_PASSWORD:
+    DATABASE_URL = f"postgresql://{DB_USER}:{DB_PASSWORD}@{DB_HOST}:{DB_PORT}/{DB_NAME}?sslmode=require"
+    app.config['SQLALCHEMY_DATABASE_URI'] = DATABASE_URL
+    print("✅ Используется PostgreSQL из переменных окружения")
+else:
+    app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///tabakmen.db'
+    print("⚠️ Используется SQLite (локальная база)")
+
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 app.config['MAX_CONTENT_LENGTH'] = 16 * 1024 * 1024  # 16MB
 
