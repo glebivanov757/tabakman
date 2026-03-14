@@ -6,6 +6,7 @@ import os
 
 app = Flask(__name__)
 app.config['SECRET_KEY'] = 'tabakmen-secret-key-2024'
+# Используем переменную окружения для базы данных
 app.config['SQLALCHEMY_DATABASE_URI'] = os.getenv('DATABASE_URL', 'sqlite:///tabakmen.db')
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 app.config['MAX_CONTENT_LENGTH'] = 16 * 1024 * 1024  # 16MB
@@ -31,7 +32,7 @@ class Product(db.Model):
     category_id = db.Column(db.Integer, db.ForeignKey('categories.id'))
     price = db.Column(db.Float, nullable=False)
     description = db.Column(db.Text, default='')
-    image_base64 = db.Column(db.Text, default='')  # Здесь будет фото в base64
+    image_base64 = db.Column(db.Text, default='')
     in_stock = db.Column(db.Boolean, default=True)
     created_at = db.Column(db.DateTime, default=datetime.now)
 
@@ -59,6 +60,7 @@ with app.app_context():
         for cat in categories:
             db.session.add(Category(name=cat))
         db.session.commit()
+        print("✅ Категории добавлены")
     print("✅ База данных готова!")
 
 # Главная страница
