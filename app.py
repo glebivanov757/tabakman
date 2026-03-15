@@ -10,12 +10,10 @@ app.config['SECRET_KEY'] = 'tabakmen-secret-key-2024'
 database_url = os.getenv('DATABASE_URL')
 
 if database_url:
-    # Railway даёт внутренний URL, меняем на внешний для работы приложения
-    if 'railway.internal' in database_url:
-        database_url = database_url.replace('postgres.railway.internal', 'localhost')
-    
+    # Для Railway: если это внутренний URL, оставляем как есть
+    # Railway сам разрулит подключение
     app.config['SQLALCHEMY_DATABASE_URI'] = database_url
-    print("✅ Используется PostgreSQL")
+    print("✅ Используется PostgreSQL (Railway)")
 else:
     app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///tabakmen.db'
     print("⚠️ Используется SQLite (запасной вариант)")
