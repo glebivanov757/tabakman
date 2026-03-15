@@ -6,15 +6,19 @@ import os
 app = Flask(__name__)
 app.config['SECRET_KEY'] = 'tabakmen-secret-key-2024'
 
-# Берём переменную из Railway
-DB_URL = os.getenv('DATABASE_URL')
+# Railway сам подставляет DATABASE_URL
+DB_URL = os.environ.get('DATABASE_URL')
 
 if DB_URL:
+    # Для Railway нужно заменить internal на external
+    if 'railway.internal' in DB_URL:
+        DB_URL = DB_URL.replace('postgres.railway.internal', 'containers-us-west-xxx.railway.app')
+    
     app.config['SQLALCHEMY_DATABASE_URI'] = DB_URL
     print("✅ Используется PostgreSQL")
 else:
     app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///tabakmen.db'
-    print("⚠️ Используется SQLite")
+    print("⚠️ Используется SQLite (запасной)")
 
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 db = SQLAlchemy(app)
@@ -42,10 +46,11 @@ class RareOrder(db.Model):
 with app.app_context():
     db.create_all()
     if Category.query.count() == 0:
-        cats = ['кальян', 'жижа', 'ашки', 'поды', 'табак']
+        cats = ['кальян', 'жижа', 'ашки', 'поды', 'табак', 'уголь']
         for cat in cats:
             db.session.add(Category(name=cat))
         db.session.commit()
+        print("✅ Категории добавлены")
 
 @app.route('/')
 def index():
@@ -55,7 +60,7 @@ def index():
 
 @app.route('/admin', methods=['GET', 'POST'])
 def admin_panel():
-    password = os.getenv('ADMIN_PASSWORD', 'tabakmen1823*4')
+    password = os.environ.get('ADMIN_PASSWORD', 'tabakmen1823*4')
     
     if request.method == 'POST':
         if request.form.get('password') == password:
@@ -100,6 +105,53 @@ def delete_product(product_id):
         db.session.delete(product)
         db.session.commit()
     return jsonify({'success': True})
+
+@app.route('/admin/orders')
+def get_orders():
+    if not session.get('admin'):
+        return jsonify({'error': 'Не авторизован'}), 403
+    orders = RareOrder.query.order_by(RareOrder.created_at.desc()).all()
+    return jsonify([{
+        'id': o.id,
+        'contact': o.customer_contact,
+        'request': o.product_request,
+        'status': o.status,
+        'created_at': o.created_at.strftime('%d.%m.%Y %H:%M')
+    } for o in orders])
+
+@app.route('/admin/order/<int:order_id>/complete', methods=['POST'])
+def complete_order(order_id):
+    if not session.get('admin'):
+        return jsonify({'error': 'Не авторизован'}), 403
+    order = RareOrder.query.get(order_id)
+    if order:
+        order.status = 'выполнено'
+        db.session.commit()
+    return jsonify({'success': True})
+
+@app.route('/admin/order/<int:order_id>/delete', methods=['POST'])
+def delete_order(order_id):
+    if not session.get('admin'):
+        return jsonify({'error': 'Не авторизован'}), 403
+    order = RareOrder.query.get(order_id)
+    if order:
+        db.session.delete(order)
+        db.session.commit()
+    return jsonify({'success': True})
+
+@app.route('/rare-order', methods=['POST'])
+def rare_order():
+    try:
+        data = request.json
+        order = RareOrder(
+            customer_contact=data.get('contact', 'Не указан'),
+            product_request=data.get('request', '')
+        )
+        db.session.add(order)
+        db.session.commit()
+        return jsonify({'success': True})
+    except Exception as e:
+        return jsonify({'success': False, 'error': str(e)}), 500
 
 if __name__ == '__main__':
     app.run()
