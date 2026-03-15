@@ -6,23 +6,22 @@ import os
 app = Flask(__name__)
 app.config['SECRET_KEY'] = 'tabakmen-secret-key-2024'
 
-# Railway сам подставляет DATABASE_URL
+# Railway даёт переменную DATABASE_URL автоматически
 DB_URL = os.environ.get('DATABASE_URL')
 
 if DB_URL:
-    # Для Railway нужно заменить internal на external
-    if 'railway.internal' in DB_URL:
-        DB_URL = DB_URL.replace('postgres.railway.internal', 'containers-us-west-xxx.railway.app')
-    
+    # Используем PostgreSQL
     app.config['SQLALCHEMY_DATABASE_URI'] = DB_URL
     print("✅ Используется PostgreSQL")
 else:
+    # Запасной вариант - SQLite
     app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///tabakmen.db'
-    print("⚠️ Используется SQLite (запасной)")
+    print("⚠️ Используется SQLite")
 
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 db = SQLAlchemy(app)
 
+# Модели
 class Category(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     name = db.Column(db.String(100), nullable=False, unique=True)
