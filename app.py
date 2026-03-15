@@ -5,21 +5,10 @@ import os
 
 app = Flask(__name__)
 app.config['SECRET_KEY'] = 'tabakmen-secret-key-2024'
-
-# Подключение к базе
-DB_HOST = os.getenv('PGHOST')
-DB_NAME = os.getenv('PGDATABASE')
-DB_USER = os.getenv('PGUSER')
-DB_PASSWORD = os.getenv('PGPASSWORD')
-DB_PORT = os.getenv('PGPORT', '5432')
-
-if DB_HOST and DB_NAME and DB_USER and DB_PASSWORD:
-    DATABASE_URL = f"postgresql://{DB_USER}:{DB_PASSWORD}@{DB_HOST}:{DB_PORT}/{DB_NAME}?sslmode=require"
-    app.config['SQLALCHEMY_DATABASE_URI'] = DATABASE_URL
-else:
-    app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///tabakmen.db'
-
+# Railway сам подставит сюда DATABASE_URL
+app.config['SQLALCHEMY_DATABASE_URI'] = os.getenv('DATABASE_URL', 'sqlite:///tabakmen.db')
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
+
 db = SQLAlchemy(app)
 
 # Модель категории
@@ -27,7 +16,7 @@ class Category(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     name = db.Column(db.String(100), nullable=False, unique=True)
 
-# Модель товара - БЕЗ description
+# Модель товара
 class Product(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     name = db.Column(db.String(200), nullable=False)
