@@ -158,6 +158,7 @@
             color: #ffd700;
             font-size: 40px;
             border-bottom: 1px solid #333;
+            overflow: hidden;
         }
         
         .product-image img {
@@ -382,16 +383,18 @@
         <span class="reset-filters" onclick="resetFilters()" style="display: none;" id="reset-btn">Сбросить</span>
     </div>
     
+    <!-- ТОВАРЫ С ФОТОГРАФИЯМИ -->
     <div class="products" id="products-container">
         {% if products %}
             {% for product in products %}
             <div class="product-card" 
                  data-category="{{ product.category.name }}" 
-                 data-name="{{ product.name.lower() }}"
-                 data-id="{{ product.id }}">
+                 data-name="{{ product.name.lower() }}">
                 <div class="product-image">
-                    {% if product.image_base64 %}
-                        <img src="data:image/jpeg;base64,{{ product.image_base64 }}" alt="{{ product.name }}">
+                    {% if product.image_url and product.image_url != '' %}
+                        <img src="{{ product.image_url }}" alt="{{ product.name }}" 
+                             onerror="this.onerror=null; this.parentNode.innerHTML='📦';"
+                             style="width:100%; height:100%; object-fit:cover;">
                     {% else %}
                         📦
                     {% endif %}
