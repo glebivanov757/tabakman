@@ -125,15 +125,6 @@
             margin: 10px 0;
         }
         
-        .product-description {
-            color: #888;
-            font-size: 13px;
-            margin: 10px 0;
-            padding: 10px 0;
-            border-top: 1px solid #333;
-            border-bottom: 1px solid #333;
-        }
-        
         .delete-btn {
             background: #ff4444;
             color: white;
@@ -188,8 +179,7 @@
         }
         
         .modal-content input,
-        .modal-content select,
-        .modal-content textarea {
+        .modal-content select {
             width: 100%;
             padding: 12px;
             margin-bottom: 15px;
@@ -201,15 +191,9 @@
         }
         
         .modal-content input:focus,
-        .modal-content select:focus,
-        .modal-content textarea:focus {
+        .modal-content select:focus {
             outline: none;
             border-color: #ffd700;
-        }
-        
-        .modal-content textarea {
-            min-height: 100px;
-            resize: vertical;
         }
         
         .modal-content input[type="text"] {
@@ -437,9 +421,6 @@
                     {% endfor %}
                 </p>
                 <div class="product-price">{{ product.price }} ₽</div>
-                {% if product.description %}
-                <div class="product-description">{{ product.description }}</div>
-                {% endif %}
                 <button class="delete-btn" onclick="deleteProduct({{ product.id }})">❌ Удалить</button>
             </div>
         </div>
@@ -476,8 +457,6 @@
             </select>
             
             <input type="number" id="product-price" placeholder="Цена" required>
-            
-            <textarea id="product-description" placeholder="Описание товара (необязательно)"></textarea>
             
             <!-- Поле для ссылки на фото -->
             <input type="text" id="product-image-url" placeholder="Ссылка на фото (https://...)">
@@ -623,7 +602,6 @@
             document.getElementById('add-modal').classList.remove('active');
             document.getElementById('product-name').value = '';
             document.getElementById('product-price').value = '';
-            document.getElementById('product-description').value = '';
             document.getElementById('product-image-url').value = '';
         }
         
@@ -642,7 +620,6 @@
             formData.append('name', name);
             formData.append('category', category);
             formData.append('price', price);
-            formData.append('description', document.getElementById('product-description').value);
             formData.append('image_url', imageUrl);
             
             const saveBtn = event.target;
