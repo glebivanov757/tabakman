@@ -22,12 +22,12 @@ else:
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 db = SQLAlchemy(app)
 
-# Модель категории - БЕЗ ИЗМЕНЕНИЙ
+# Модель категории
 class Category(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     name = db.Column(db.String(100), nullable=False, unique=True)
 
-# Модель товара - БЕЗ ПОЛЯ description
+# Модель товара - БЕЗ description
 class Product(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     name = db.Column(db.String(200), nullable=False)
