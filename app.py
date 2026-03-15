@@ -6,30 +6,24 @@ import os
 app = Flask(__name__)
 app.config['SECRET_KEY'] = 'tabakmen-secret-key-2024'
 
-# Получаем строку подключения из переменных окружения Railway
-database_url = os.getenv('DATABASE_URL')
+# Берём переменную из Railway
+DB_URL = os.getenv('DATABASE_URL')
 
-if database_url:
-    # Для Railway: если это внутренний URL, оставляем как есть
-    # Railway сам разрулит подключение
-    app.config['SQLALCHEMY_DATABASE_URI'] = database_url
-    print("✅ Используется PostgreSQL (Railway)")
+if DB_URL:
+    app.config['SQLALCHEMY_DATABASE_URI'] = DB_URL
+    print("✅ Используется PostgreSQL")
 else:
     app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///tabakmen.db'
-    print("⚠️ Используется SQLite (запасной вариант)")
+    print("⚠️ Используется SQLite")
 
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 db = SQLAlchemy(app)
 
-# Модель категории
 class Category(db.Model):
-    __tablename__ = 'category'
     id = db.Column(db.Integer, primary_key=True)
     name = db.Column(db.String(100), nullable=False, unique=True)
 
-# Модель товара
 class Product(db.Model):
-    __tablename__ = 'product'
     id = db.Column(db.Integer, primary_key=True)
     name = db.Column(db.String(200), nullable=False)
     category_id = db.Column(db.Integer, db.ForeignKey('category.id'))
@@ -38,9 +32,7 @@ class Product(db.Model):
     in_stock = db.Column(db.Boolean, default=True)
     category = db.relationship('Category')
 
-# Модель заявок
 class RareOrder(db.Model):
-    __tablename__ = 'rare_order'
     id = db.Column(db.Integer, primary_key=True)
     customer_contact = db.Column(db.String(200), nullable=False)
     product_request = db.Column(db.Text, nullable=False)
@@ -48,24 +40,12 @@ class RareOrder(db.Model):
     created_at = db.Column(db.DateTime, default=datetime.now)
 
 with app.app_context():
-    # Создаём таблицы
     db.create_all()
-    print("✅ Таблицы созданы")
-    
-    # Добавляем категории если их нет
     if Category.query.count() == 0:
-        categories = [
-            'кальян', 'жижа', 'ашки', 'поды', 'табак', 'уголь',
-            'IQOS', 'HQD', 'вейпы', 'одноразовые сигареты', 'glo',
-            'катреджи/аккумуляторы', 'кальяновые смеси', 'аксессуары для кальяна',
-            'никотиновые пластинки', 'жевательный табак', 'сигаретный/трубочный табак',
-            'нюхательный табак', 'аксессуары для самокруток', 'сигары', 'сигариллы',
-            'папиросы', 'энергетические напитки', 'курительные трубки'
-        ]
-        for cat in categories:
+        cats = ['кальян', 'жижа', 'ашки', 'поды', 'табак']
+        for cat in cats:
             db.session.add(Category(name=cat))
         db.session.commit()
-        print(f"✅ Добавлено {len(categories)} категорий")
 
 @app.route('/')
 def index():
@@ -107,71 +87,19 @@ def add_product():
         )
         db.session.add(product)
         db.session.commit()
-        return jsonify({'success': True, 'id': product.id})
+        return jsonify({'success': True})
     except Exception as e:
-        db.session.rollback()
         return jsonify({'success': False, 'error': str(e)}), 500
 
-@app.route('/admin/delete/<int:product_id>', methods=['POST'])
+@app.route('/admin/delete/<int:product_id>')
 def delete_product(product_id):
     if not session.get('admin'):
         return jsonify({'error': 'Не авторизован'}), 403
-    
-    try:
-        product = Product.query.get(product_id)
-        if product:
-            db.session.delete(product)
-            db.session.commit()
-        return jsonify({'success': True})
-    except Exception as e:
-        return jsonify({'success': False, 'error': str(e)}), 500
-
-@app.route('/admin/orders')
-def get_orders():
-    if not session.get('admin'):
-        return jsonify({'error': 'Не авторизован'}), 403
-    orders = RareOrder.query.order_by(RareOrder.created_at.desc()).all()
-    return jsonify([{
-        'id': o.id,
-        'contact': o.customer_contact,
-        'request': o.product_request,
-        'status': o.status,
-        'created_at': o.created_at.strftime('%d.%m.%Y %H:%M')
-    } for o in orders])
-
-@app.route('/admin/order/<int:order_id>/complete', methods=['POST'])
-def complete_order(order_id):
-    if not session.get('admin'):
-        return jsonify({'error': 'Не авторизован'}), 403
-    order = RareOrder.query.get(order_id)
-    if order:
-        order.status = 'выполнено'
+    product = Product.query.get(product_id)
+    if product:
+        db.session.delete(product)
         db.session.commit()
     return jsonify({'success': True})
-
-@app.route('/admin/order/<int:order_id>/delete', methods=['POST'])
-def delete_order(order_id):
-    if not session.get('admin'):
-        return jsonify({'error': 'Не авторизован'}), 403
-    order = RareOrder.query.get(order_id)
-    if order:
-        db.session.delete(order)
-        db.session.commit()
-    return jsonify({'success': True})
-
-@app.route('/rare-order', methods=['POST'])
-def rare_order():
-    try:
-        data = request.json
-        order = RareOrder(
-            customer_contact=data.get('contact', 'Не указан'),
-            product_request=data.get('request', '')
-        )
-        db.session.add(order)
-        db.session.commit()
-        return jsonify({'success': True})
-    except Exception as e:
-        return jsonify({'success': False, 'error': str(e)}), 500
 
 if __name__ == '__main__':
     app.run()
