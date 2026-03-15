@@ -5,19 +5,33 @@ import os
 
 app = Flask(__name__)
 app.config['SECRET_KEY'] = 'tabakmen-secret-key-2024'
-# Railway сам подставит сюда DATABASE_URL
-app.config['SQLALCHEMY_DATABASE_URI'] = os.getenv('DATABASE_URL', 'sqlite:///tabakmen.db')
-app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 
+# Получаем строку подключения из переменных окружения Railway
+database_url = os.getenv('DATABASE_URL')
+
+if database_url:
+    # Railway даёт внутренний URL, меняем на внешний для работы приложения
+    if 'railway.internal' in database_url:
+        database_url = database_url.replace('postgres.railway.internal', 'localhost')
+    
+    app.config['SQLALCHEMY_DATABASE_URI'] = database_url
+    print("✅ Используется PostgreSQL")
+else:
+    app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///tabakmen.db'
+    print("⚠️ Используется SQLite (запасной вариант)")
+
+app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 db = SQLAlchemy(app)
 
 # Модель категории
 class Category(db.Model):
+    __tablename__ = 'category'
     id = db.Column(db.Integer, primary_key=True)
     name = db.Column(db.String(100), nullable=False, unique=True)
 
 # Модель товара
 class Product(db.Model):
+    __tablename__ = 'product'
     id = db.Column(db.Integer, primary_key=True)
     name = db.Column(db.String(200), nullable=False)
     category_id = db.Column(db.Integer, db.ForeignKey('category.id'))
@@ -28,6 +42,7 @@ class Product(db.Model):
 
 # Модель заявок
 class RareOrder(db.Model):
+    __tablename__ = 'rare_order'
     id = db.Column(db.Integer, primary_key=True)
     customer_contact = db.Column(db.String(200), nullable=False)
     product_request = db.Column(db.Text, nullable=False)
@@ -35,7 +50,10 @@ class RareOrder(db.Model):
     created_at = db.Column(db.DateTime, default=datetime.now)
 
 with app.app_context():
+    # Создаём таблицы
     db.create_all()
+    print("✅ Таблицы созданы")
+    
     # Добавляем категории если их нет
     if Category.query.count() == 0:
         categories = [
@@ -49,7 +67,7 @@ with app.app_context():
         for cat in categories:
             db.session.add(Category(name=cat))
         db.session.commit()
-        print("✅ Категории добавлены")
+        print(f"✅ Добавлено {len(categories)} категорий")
 
 @app.route('/')
 def index():
@@ -91,19 +109,24 @@ def add_product():
         )
         db.session.add(product)
         db.session.commit()
-        return jsonify({'success': True})
+        return jsonify({'success': True, 'id': product.id})
     except Exception as e:
+        db.session.rollback()
         return jsonify({'success': False, 'error': str(e)}), 500
 
-@app.route('/admin/delete/<int:product_id>')
+@app.route('/admin/delete/<int:product_id>', methods=['POST'])
 def delete_product(product_id):
     if not session.get('admin'):
         return jsonify({'error': 'Не авторизован'}), 403
-    product = Product.query.get(product_id)
-    if product:
-        db.session.delete(product)
-        db.session.commit()
-    return jsonify({'success': True})
+    
+    try:
+        product = Product.query.get(product_id)
+        if product:
+            db.session.delete(product)
+            db.session.commit()
+        return jsonify({'success': True})
+    except Exception as e:
+        return jsonify({'success': False, 'error': str(e)}), 500
 
 @app.route('/admin/orders')
 def get_orders():
