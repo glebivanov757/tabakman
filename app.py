@@ -22,32 +22,17 @@ else:
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 db = SQLAlchemy(app)
 
-# Функция преобразования ссылок Google Drive
-def convert_google_drive_link(url):
-    """Преобразует обычную ссылку Google Drive в прямую"""
-    if not url:
-        return url
-    if 'drive.google.com' in url:
-        if '/file/d/' in url:
-            file_id = url.split('/file/d/')[1].split('/')[0]
-            return f"https://drive.google.com/uc?export=view&id={file_id}"
-        elif 'id=' in url:
-            file_id = url.split('id=')[1].split('&')[0]
-            return f"https://drive.google.com/uc?export=view&id={file_id}"
-    return url
-
-# Модель категории
+# Модель категории - БЕЗ ИЗМЕНЕНИЙ
 class Category(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     name = db.Column(db.String(100), nullable=False, unique=True)
 
-# Модель товара со ссылкой на фото
+# Модель товара - БЕЗ ПОЛЯ description
 class Product(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     name = db.Column(db.String(200), nullable=False)
     category_id = db.Column(db.Integer, db.ForeignKey('category.id'))
     price = db.Column(db.Float, nullable=False)
-    description = db.Column(db.Text, default='')
     image_url = db.Column(db.String(500), default='')
     in_stock = db.Column(db.Boolean, default=True)
     category = db.relationship('Category')
@@ -62,6 +47,7 @@ class RareOrder(db.Model):
 
 with app.app_context():
     db.create_all()
+    # Добавляем категории если их нет
     if Category.query.count() == 0:
         categories = [
             'кальян', 'жижа', 'ашки', 'поды', 'табак', 'уголь',
@@ -108,16 +94,11 @@ def add_product():
         return jsonify({'error': 'Не авторизован'}), 403
     
     try:
-        # Получаем ссылку и преобразуем её
-        original_url = request.form.get('image_url', '')
-        converted_url = convert_google_drive_link(original_url)
-        
         product = Product(
             name=request.form['name'],
             category_id=int(request.form['category']),
             price=float(request.form['price']),
-            description=request.form.get('description', ''),
-            image_url=converted_url
+            image_url=request.form.get('image_url', '')
         )
         db.session.add(product)
         db.session.commit()
