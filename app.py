@@ -82,17 +82,17 @@ with app.app_context():
     print("✅ Таблицы созданы")
     
     # ============================================
-    # ОБНОВЛЕНИЕ КАТЕГОРИЙ (С СОХРАНЕНИЕМ ПРОГРЕССА)
+    # ПОЛНОЕ ОБНОВЛЕНИЕ КАТЕГОРИЙ (УДАЛЯЕМ СТАРЫЕ)
     # ============================================
     
     # Полный список новых категорий
     new_categories = [
-        'Одноразовые электронные сигареты',  # бывшие ашки
+        'Одноразовые электронные сигареты',  # вместо ашка
         'glo',
         'IQOS',
-        'Вейпы и электронные сигареты',      # бывшие поды
+        'Вейпы и электронные сигареты',      # вместо поды
         'Картриджи, испарители и аккумуляторы',
-        'Жидкости',                           # бывшая жижа
+        'Жидкости',                           # вместо жижа
         'Никотиновые пластинки',
         'Кальяны',
         'Кальянные смеси',
@@ -108,43 +108,50 @@ with app.app_context():
         'Курительные трубки'
     ]
     
-    if Category.query.count() == 0:
-        # Если категорий нет - создаём все новые
-        for cat in new_categories:
-            db.session.add(Category(name=cat))
-        db.session.commit()
-        print(f"✅ Добавлено {len(new_categories)} новых категорий")
-    else:
-        # Если категории уже есть - обновляем старые названия
-        print("🔄 Обновляем названия категорий...")
+    # Словарь для переноса товаров из старых категорий в новые
+    category_mapping = {
+        'ашка': 'Одноразовые электронные сигареты',
+        'ашки': 'Одноразовые электронные сигареты',
+        'жижа': 'Жидкости',
+        'поды': 'Вейпы и электронные сигареты'
+    }
+    
+    # Получаем все старые категории, которые нужно удалить
+    old_category_names = list(category_mapping.keys())
+    
+    # Переносим товары из старых категорий в новые
+    for old_name, new_name in category_mapping.items():
+        old_cat = Category.query.filter_by(name=old_name).first()
+        new_cat = Category.query.filter_by(name=new_name).first()
         
-        # Словарь замены старых названий на новые
-        category_updates = {
-            'ашка': 'Одноразовые электронные сигареты',
-            'ашки': 'Одноразовые электронные сигареты',
-            'жижа': 'Жидкости',
-            'поды': 'Вейпы и электронные сигареты'
-        }
-        
-        # Обновляем старые названия
-        for old_name, new_name in category_updates.items():
-            cat = Category.query.filter_by(name=old_name).first()
-            if cat:
-                cat.name = new_name
-                print(f"  ➡️ {old_name} → {new_name}")
-        
-        # Проверяем, есть ли уже все новые категории
-        existing_names = [cat.name for cat in Category.query.all()]
-        added_count = 0
-        for new_cat in new_categories:
-            if new_cat not in existing_names:
-                db.session.add(Category(name=new_cat))
-                added_count += 1
-                print(f"  ➕ Добавлена новая категория: {new_cat}")
-        
-        db.session.commit()
-        print(f"✅ Обновление завершено. Добавлено {added_count} новых категорий")
-
+        if old_cat and old_cat.products:
+            print(f"🔄 Перенос товаров из '{old_name}' ({len(old_cat.products)} шт) в '{new_name}'")
+            for product in old_cat.products:
+                if new_cat:
+                    product.category_id = new_cat.id
+                else:
+                    # Если новой категории нет - создаём
+                    new_cat = Category(name=new_name)
+                    db.session.add(new_cat)
+                    db.session.flush()
+                    product.category_id = new_cat.id
+    
+    # Удаляем старые категории
+    for old_name in old_category_names:
+        old_cat = Category.query.filter_by(name=old_name).first()
+        if old_cat:
+            print(f"🗑️ Удаление старой категории: {old_name}")
+            db.session.delete(old_cat)
+    
+    # Добавляем новые категории, если их ещё нет
+    existing_names = [cat.name for cat in Category.query.all()]
+    for new_cat in new_categories:
+        if new_cat not in existing_names:
+            db.session.add(Category(name=new_cat))
+            print(f"➕ Добавлена новая категория: {new_cat}")
+    
+    db.session.commit()
+    print("✅ Категории обновлены, старые удалены")
 @app.route('/')
 def index():
     try:
