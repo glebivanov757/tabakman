@@ -33,7 +33,6 @@ class Product(db.Model):
     price = db.Column(db.Float, nullable=False)
     image_url = db.Column(db.String(500), default='')
     in_stock = db.Column(db.Boolean, default=True)
-    # Связь с категорией
     category = db.relationship('Category', backref='products')
 
 class RareOrder(db.Model):
@@ -44,7 +43,7 @@ class RareOrder(db.Model):
     status = db.Column(db.String(50), default='новый')
     created_at = db.Column(db.DateTime, default=datetime.now)
 
-with app.app_context():
+wwith app.app_context():
     db.create_all()
     print("✅ Таблицы созданы")
     
@@ -132,51 +131,26 @@ with app.app_context():
         'ашка', 'ашки', 'жижа', 'поды','HQD'
     ]
     
-    deleted_count = 0
-    for cat_name in old_categories_to_delete:
-        cat = Category.query.filter_by(name=cat_name).first()
-        if cat:
-            # Проверяем, остались ли товары
-            products_left = Product.query.filter_by(category_id=cat.id).count()
-            if products_left == 0:
-                db.session.delete(cat)
-                deleted_count += 1
-                print(f"🗑️ Удалена пустая категория: {cat_name}")
-            else:
-                print(f"⚠️ Категория '{cat_name}' ещё содержит {products_left} товаров")
-    
-    # ============================================
-    # ДОБАВЛЕНИЕ НОВЫХ КАТЕГОРИЙ
-    # ============================================
-    added_count = 0
-    for cat_name in correct_categories:
-        exists = Category.query.filter_by(name=cat_name).first()
-        if not exists:
-            db.session.add(Category(name=cat_name))
-            added_count += 1
-            print(f"➕ Добавлена новая категория: {cat_name}")
-    
-    db.session.commit()
-    print(f"✅ Результат: удалено {deleted_count} старых, добавлено {added_count} новых")
-    
-    # ============================================
-    # ФИНАЛЬНЫЙ СПИСОК КАТЕГОРИЙ
-    # ============================================
-    final_cats = Category.query.all()
-    print("📊 Финальные категории в базе:")
-    for cat in final_cats:
-        products_count = Product.query.filter_by(category_id=cat.id).count()
-        print(f"   - {cat.name} ({products_count} товаров)")
-
 @app.route('/')
 def index():
-    try:
-        products = Product.query.filter_by(in_stock=True).all()
-        categories = Category.query.all()
-        return render_template('index.html', products=products, categories=categories)
-    except Exception as e:
-        print(f"❌ Ошибка на главной: {e}")
-        return f"Ошибка: {e}", 500
+    # Проверка возраста
+    if not session.get('age_verified'):
+        return redirect('/age-verification')
+    
+    products = Product.query.filter_by(in_stock=True).all()
+    categories = Category.query.all()
+    return render_template('index.html', products=products, categories=categories)
+
+@app.route('/age-verification', methods=['GET', 'POST'])
+def age_verification():
+    if request.method == 'POST':
+        if request.form.get('age') == 'yes':
+            session['age_verified'] = True
+            return redirect('/')
+        else:
+            return "<h1 style='color: red; text-align: center; margin-top: 50px;'>🚫 Доступ запрещен лицам младше 18 лет</h1>"
+    
+    return render_template('age_verification.html')
 
 @app.route('/admin', methods=['GET', 'POST'])
 def admin_panel():
@@ -187,13 +161,9 @@ def admin_panel():
             session['admin'] = True
     
     if session.get('admin'):
-        try:
-            return render_template('admin.html', 
-                                 products=Product.query.all(),
-                                 categories=Category.query.all())
-        except Exception as e:
-            print(f"❌ Ошибка в админке: {e}")
-            return f"Ошибка: {e}", 500
+        return render_template('admin.html', 
+                             products=Product.query.all(),
+                             categories=Category.query.all())
     
     return render_template('admin_login.html')
 
@@ -216,12 +186,40 @@ def add_product():
         )
         db.session.add(product)
         db.session.commit()
-        print(f"✅ Товар добавлен: {product.name}")
-        return jsonify({'success': True, 'id': product.id})
+        return jsonify({'success': True})
     except Exception as e:
-        db.session.rollback()
-        print(f"❌ Ошибка при добавлении товара: {e}")
         return jsonify({'success': False, 'error': str(e)}), 500
+
+@app.route('/admin/edit/<int:product_id>', methods=['GET', 'POST'])
+def edit_product(product_id):
+    if not session.get('admin'):
+        return jsonify({'error': 'Не авторизован'}), 403
+    
+    product = Product.query.get(product_id)
+    if not product:
+        return jsonify({'error': 'Товар не найден'}), 404
+    
+    if request.method == 'GET':
+        return jsonify({
+            'id': product.id,
+            'name': product.name,
+            'category_id': product.category_id,
+            'price': product.price,
+            'image_url': product.image_url,
+            'in_stock': product.in_stock
+        })
+    
+    if request.method == 'POST':
+        try:
+            product.name = request.form['name']
+            product.category_id = int(request.form['category'])
+            product.price = float(request.form['price'])
+            product.image_url = request.form.get('image_url', '')
+            product.in_stock = 'in_stock' in request.form
+            db.session.commit()
+            return jsonify({'success': True})
+        except Exception as e:
+            return jsonify({'success': False, 'error': str(e)}), 500
 
 @app.route('/admin/delete/<int:product_id>')
 def delete_product(product_id):
@@ -233,10 +231,8 @@ def delete_product(product_id):
         if product:
             db.session.delete(product)
             db.session.commit()
-            print(f"✅ Товар удален: {product.name}")
         return jsonify({'success': True})
     except Exception as e:
-        print(f"❌ Ошибка при удалении: {e}")
         return jsonify({'success': False, 'error': str(e)}), 500
 
 @app.route('/admin/orders')
@@ -244,50 +240,36 @@ def get_orders():
     if not session.get('admin'):
         return jsonify({'error': 'Не авторизован'}), 403
     
-    try:
-        orders = RareOrder.query.order_by(RareOrder.created_at.desc()).all()
-        return jsonify([{
-            'id': o.id,
-            'contact': o.customer_contact,
-            'request': o.product_request,
-            'status': o.status,
-            'created_at': o.created_at.strftime('%d.%m.%Y %H:%M')
-        } for o in orders])
-    except Exception as e:
-        print(f"❌ Ошибка при получении заявок: {e}")
-        return jsonify([])
+    orders = RareOrder.query.order_by(RareOrder.created_at.desc()).all()
+    return jsonify([{
+        'id': o.id,
+        'contact': o.customer_contact,
+        'request': o.product_request,
+        'status': o.status,
+        'created_at': o.created_at.strftime('%d.%m.%Y %H:%M')
+    } for o in orders])
 
 @app.route('/admin/order/<int:order_id>/complete', methods=['POST'])
 def complete_order(order_id):
     if not session.get('admin'):
         return jsonify({'error': 'Не авторизован'}), 403
     
-    try:
-        order = RareOrder.query.get(order_id)
-        if order:
-            order.status = 'выполнено'
-            db.session.commit()
-            print(f"✅ Заявка {order_id} выполнена")
-        return jsonify({'success': True})
-    except Exception as e:
-        print(f"❌ Ошибка при выполнении заявки: {e}")
-        return jsonify({'success': False, 'error': str(e)}), 500
+    order = RareOrder.query.get(order_id)
+    if order:
+        order.status = 'выполнено'
+        db.session.commit()
+    return jsonify({'success': True})
 
 @app.route('/admin/order/<int:order_id>/delete', methods=['POST'])
 def delete_order(order_id):
     if not session.get('admin'):
         return jsonify({'error': 'Не авторизован'}), 403
     
-    try:
-        order = RareOrder.query.get(order_id)
-        if order:
-            db.session.delete(order)
-            db.session.commit()
-            print(f"✅ Заявка {order_id} удалена")
-        return jsonify({'success': True})
-    except Exception as e:
-        print(f"❌ Ошибка при удалении заявки: {e}")
-        return jsonify({'success': False, 'error': str(e)}), 500
+    order = RareOrder.query.get(order_id)
+    if order:
+        db.session.delete(order)
+        db.session.commit()
+    return jsonify({'success': True})
 
 @app.route('/rare-order', methods=['POST'])
 def rare_order():
@@ -299,10 +281,8 @@ def rare_order():
         )
         db.session.add(order)
         db.session.commit()
-        print(f"📝 Новая заявка: {order.customer_contact} хочет {order.product_request}")
         return jsonify({'success': True})
     except Exception as e:
-        print(f"❌ Ошибка при создании заявки: {e}")
         return jsonify({'success': False, 'error': str(e)}), 500
 
 if __name__ == '__main__':
