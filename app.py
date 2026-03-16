@@ -43,7 +43,7 @@ class RareOrder(db.Model):
     status = db.Column(db.String(50), default='новый')
     created_at = db.Column(db.DateTime, default=datetime.now)
 
-wwith app.app_context():
+with app.app_context():
     db.create_all()
     print("✅ Таблицы созданы")
     
@@ -97,10 +97,11 @@ wwith app.app_context():
         'ашка': 'Одноразовые электронные сигареты',
         'ашки': 'Одноразовые электронные сигареты',
         'жижа': 'Жидкости',
-        'поды': 'Вейпы и электронные сигареты'
+        'поды': 'Вейпы и электронные сигареты',
+        'HQD': 'Одноразовые электронные сигареты'
     }
     
-
+    # ПЕРЕНОС ТОВАРОВ
     for old_name, new_name in move_map.items():
         old_cat = Category.query.filter_by(name=old_name).first()
         new_cat = Category.query.filter_by(name=new_name).first()
@@ -119,18 +120,37 @@ wwith app.app_context():
                 for product in products:
                     product.category_id = new_cat.id
     
-    # ============================================
     # УДАЛЕНИЕ СТАРЫХ КАТЕГОРИЙ
-    # ============================================
     old_categories_to_delete = [
         'кальян', 'табак', 'уголь', 'вейпы', 'одноразовые сигареты',
         'катреджи/аккумуляторы', 'кальяновые смеси', 'аксессуары для кальяна',
         'никотиновые пластинки', 'жевательный табак', 'сигаретный/трубочный табак',
         'нюхательный табак', 'аксессуары для самокруток', 'сигары',
         'сигариллы', 'папиросы', 'энергетические напитки', 'курительные трубки',
-        'ашка', 'ашки', 'жижа', 'поды','HQD'
+        'ашка', 'ашки', 'жижа', 'поды', 'HQD'
     ]
     
+    for cat_name in old_categories_to_delete:
+        cat = Category.query.filter_by(name=cat_name).first()
+        if cat:
+            # Проверяем, остались ли товары
+            products_left = Product.query.filter_by(category_id=cat.id).count()
+            if products_left == 0:
+                db.session.delete(cat)
+                print(f"🗑️ Удалена пустая категория: {cat_name}")
+            else:
+                print(f"⚠️ Категория '{cat_name}' ещё содержит {products_left} товаров")
+    
+    # ДОБАВЛЕНИЕ НОВЫХ КАТЕГОРИЙ
+    for cat_name in correct_categories:
+        if not Category.query.filter_by(name=cat_name).first():
+            db.session.add(Category(name=cat_name))
+            print(f"➕ Добавлена новая категория: {cat_name}")
+    
+    # СОХРАНЯЕМ ВСЕ ИЗМЕНЕНИЯ
+    db.session.commit()
+    print("✅ Категории обновлены")
+
 @app.route('/')
 def index():
     # Проверка возраста
