@@ -101,9 +101,7 @@ with app.app_context():
         'поды': 'Вейпы и электронные сигареты'
     }
     
-    # ============================================
-    # ПЕРЕНОС ТОВАРОВ ИЗ СТАРЫХ КАТЕГОРИЙ В НОВЫЕ
-    # ============================================
+
     for old_name, new_name in move_map.items():
         old_cat = Category.query.filter_by(name=old_name).first()
         new_cat = Category.query.filter_by(name=new_name).first()
