@@ -365,7 +365,7 @@
 </head>
 <body>
     <div class="header">
-        <h1>🚬 ТАБАКМАН</h1>
+        <h1>🚬 ТАБАКМЕН</h1>
         <div class="subtitle">
             кальяны · жидкости · поды · сигареты
         </div>
@@ -383,7 +383,6 @@
         <span class="reset-filters" onclick="resetFilters()" style="display: none;" id="reset-btn">Сбросить</span>
     </div>
     
-    <!-- ТОВАРЫ С ФОТОГРАФИЯМИ -->
     <div class="products" id="products-container">
         {% if products %}
             {% for product in products %}
@@ -420,7 +419,7 @@
     <div class="modal" id="rare-order-modal">
         <div class="modal-content">
             <h2>🔥 Редкий заказ</h2>
-            <input type="text" id="customer-contact" placeholder="Твой Telegram @username" value="@">
+            <input type="text" id="customer-contact" placeholder="Твой Telegram @username" value="@huhmek26">
             <textarea id="product-request" placeholder="Что именно ты ищешь? Опиши подробнее..."></textarea>
             <div class="modal-buttons">
                 <button class="cancel-btn" onclick="closeRareOrderModal()">Отмена</button>
