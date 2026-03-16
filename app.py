@@ -82,11 +82,11 @@ with app.app_context():
     print("✅ Таблицы созданы")
     
     # ============================================
-    # ПОЛНОЕ ОБНОВЛЕНИЕ КАТЕГОРИЙ (УДАЛЯЕМ СТАРЫЕ)
+    # ПОЛНАЯ ЗАМЕНА КАТЕГОРИЙ (СТАРЫЕ УДАЛЯЮТСЯ)
     # ============================================
     
-    # Полный список новых категорий
-    new_categories = [
+    # ЕДИНСТВЕННЫЙ ПРАВИЛЬНЫЙ СПИСОК КАТЕГОРИЙ
+    correct_categories = [
         'Одноразовые электронные сигареты',  # вместо ашка
         'glo',
         'IQOS',
@@ -108,24 +108,32 @@ with app.app_context():
         'Курительные трубки'
     ]
     
-    # Словарь для переноса товаров из старых категорий в новые
-    category_mapping = {
+    # Получаем все существующие категории
+    all_cats = Category.query.all()
+    existing_names = [cat.name for cat in all_cats]
+    
+    print("🔄 Текущие категории в базе:")
+    for cat in all_cats:
+        print(f"   - {cat.name}")
+    
+    # Словарь для маппинга старых названий на новые
+    category_map = {
         'ашка': 'Одноразовые электронные сигареты',
         'ашки': 'Одноразовые электронные сигареты',
         'жижа': 'Жидкости',
-        'поды': 'Вейпы и электронные сигареты'
+        'поды': 'Вейпы и электронные сигареты',
+        'кальян': 'Кальяны',
+        'табак': 'Сигаретный табак, Жевательный табак',
+        'уголь': 'Уголь для кальяна'
     }
     
-    # Получаем все старые категории, которые нужно удалить
-    old_category_names = list(category_mapping.keys())
-    
     # Переносим товары из старых категорий в новые
-    for old_name, new_name in category_mapping.items():
+    for old_name, new_name in category_map.items():
         old_cat = Category.query.filter_by(name=old_name).first()
         new_cat = Category.query.filter_by(name=new_name).first()
         
         if old_cat and old_cat.products:
-            print(f"🔄 Перенос товаров из '{old_name}' ({len(old_cat.products)} шт) в '{new_name}'")
+            print(f"🔄 Перенос товаров из '{old_name}' в '{new_name}'")
             for product in old_cat.products:
                 if new_cat:
                     product.category_id = new_cat.id
@@ -136,22 +144,34 @@ with app.app_context():
                     db.session.flush()
                     product.category_id = new_cat.id
     
-    # Удаляем старые категории
-    for old_name in old_category_names:
-        old_cat = Category.query.filter_by(name=old_name).first()
-        if old_cat:
-            print(f"🗑️ Удаление старой категории: {old_name}")
-            db.session.delete(old_cat)
+    # Удаляем ВСЕ старые категории, которых нет в правильном списке
+    deleted_count = 0
+    for cat in all_cats:
+        if cat.name not in correct_categories:
+            if not cat.products:  # Удаляем только пустые категории
+                print(f"🗑️ Удаление пустой категории: {cat.name}")
+                db.session.delete(cat)
+                deleted_count += 1
+            else:
+                print(f"⚠️ Категория '{cat.name}' не пуста ({len(cat.products)} товаров) - оставляем")
     
-    # Добавляем новые категории, если их ещё нет
-    existing_names = [cat.name for cat in Category.query.all()]
-    for new_cat in new_categories:
-        if new_cat not in existing_names:
-            db.session.add(Category(name=new_cat))
-            print(f"➕ Добавлена новая категория: {new_cat}")
+    # Добавляем недостающие категории из правильного списка
+    added_count = 0
+    for cat_name in correct_categories:
+        exists = Category.query.filter_by(name=cat_name).first()
+        if not exists:
+            db.session.add(Category(name=cat_name))
+            added_count += 1
+            print(f"➕ Добавлена категория: {cat_name}")
     
     db.session.commit()
-    print("✅ Категории обновлены, старые удалены")
+    print(f"✅ Итог: удалено {deleted_count} старых категорий, добавлено {added_count} новых")
+    
+    # Показываем финальный список
+    final_cats = Category.query.all()
+    print("📊 Финальные категории в базе:")
+    for cat in final_cats:
+        print(f"   - {cat.name}")
 @app.route('/')
 def index():
     try:
