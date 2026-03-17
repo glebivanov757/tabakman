@@ -19,6 +19,35 @@ except Exception as e:
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 db = SQLAlchemy(app)
 
+# ============================================
+# ФУНКЦИЯ ПРЕОБРАЗОВАНИЯ ССЫЛОК GOOGLE DRIVE
+# ============================================
+def convert_google_drive_link(url):
+    """Преобразует любую ссылку Google Drive в прямую ссылку на изображение"""
+    if not url or not isinstance(url, str):
+        return url
+    
+    print(f"🔍 Оригинальная ссылка: {url}")
+    
+    if 'drive.google.com' in url:
+        try:
+            if '/file/d/' in url:
+                file_id = url.split('/file/d/')[1].split('/')[0]
+                converted = f"https://drive.google.com/thumbnail?id={file_id}&sz=w1000"
+                print(f"✅ Преобразована в thumbnail: {converted}")
+                return converted
+            elif 'id=' in url:
+                file_id = url.split('id=')[1].split('&')[0]
+                converted = f"https://drive.google.com/thumbnail?id={file_id}&sz=w1000"
+                print(f"✅ Преобразована в thumbnail: {converted}")
+                return converted
+            elif 'uc?' in url:
+                return url
+        except Exception as e:
+            print(f"⚠️ Ошибка преобразования: {e}")
+            return url
+    return url
+
 # Модели
 class Category(db.Model):
     __tablename__ = 'category'
@@ -47,9 +76,7 @@ with app.app_context():
     db.create_all()
     print("✅ Таблицы созданы")
     
-    # ============================================
-    # ПОЛНЫЙ СПИСОК НУЖНЫХ КАТЕГОРИЙ
-    # ============================================
+    # Полный список нужных категорий
     correct_categories = [
         'Одноразовые электронные сигареты',
         'glo',
@@ -72,9 +99,7 @@ with app.app_context():
         'Курительные трубки'
     ]
     
-    # ============================================
-    # СЛОВАРЬ ДЛЯ ПЕРЕНОСА ТОВАРОВ
-    # ============================================
+    # Словарь для переноса товаров
     move_map = {
         'кальян': 'Кальяны',
         'табак': 'Сигаретный табак, Жевательный табак',
@@ -110,7 +135,6 @@ with app.app_context():
             products = Product.query.filter_by(category_id=old_cat.id).all()
             if products:
                 if not new_cat:
-                    # Если новой категории нет - создаём
                     new_cat = Category(name=new_name)
                     db.session.add(new_cat)
                     db.session.flush()
@@ -133,7 +157,6 @@ with app.app_context():
     for cat_name in old_categories_to_delete:
         cat = Category.query.filter_by(name=cat_name).first()
         if cat:
-            # Проверяем, остались ли товары
             products_left = Product.query.filter_by(category_id=cat.id).count()
             if products_left == 0:
                 db.session.delete(cat)
@@ -147,7 +170,6 @@ with app.app_context():
             db.session.add(Category(name=cat_name))
             print(f"➕ Добавлена новая категория: {cat_name}")
     
-    # СОХРАНЯЕМ ВСЕ ИЗМЕНЕНИЯ
     db.session.commit()
     print("✅ Категории обновлены")
 
@@ -198,11 +220,16 @@ def add_product():
         return jsonify({'error': 'Не авторизован'}), 403
     
     try:
+        # Получаем ссылку и преобразуем её
+        original_url = request.form.get('image_url', '')
+        converted_url = convert_google_drive_link(original_url)
+        
         product = Product(
             name=request.form['name'],
             category_id=int(request.form['category']),
             price=float(request.form['price']),
-            image_url=request.form.get('image_url', '')
+            image_url=converted_url,
+            in_stock='in_stock' in request.form
         )
         db.session.add(product)
         db.session.commit()
@@ -231,10 +258,13 @@ def edit_product(product_id):
     
     if request.method == 'POST':
         try:
+            original_url = request.form.get('image_url', '')
+            converted_url = convert_google_drive_link(original_url)
+            
             product.name = request.form['name']
             product.category_id = int(request.form['category'])
             product.price = float(request.form['price'])
-            product.image_url = request.form.get('image_url', '')
+            product.image_url = converted_url
             product.in_stock = 'in_stock' in request.form
             db.session.commit()
             return jsonify({'success': True})
