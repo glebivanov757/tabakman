@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=yes">
-    <title>ТАБАКМAН</title>
+    <title>ТАБАКМЕН</title>
     <style>
         * {
             margin: 0;
@@ -225,7 +225,6 @@
             transform: scale(0.95);
         }
         
-        /* Модальное окно для увеличения фото */
         .image-modal {
             display: none;
             position: fixed;
@@ -279,7 +278,6 @@
             background: #333;
         }
         
-        /* Модальное окно для редкого заказа */
         .modal {
             display: none;
             position: fixed;
@@ -426,7 +424,7 @@
 </head>
 <body>
     <div class="header">
-        <h1>🚬 ТАБАКМAН</h1>
+        <h1>🚬 ТАБАКМЕН</h1>
         <div class="subtitle">
             кальяны · жидкости · поды · сигареты
         </div>
@@ -488,8 +486,8 @@
     <div class="modal" id="rare-order-modal">
         <div class="modal-content">
             <h2>🔥 Редкий заказ</h2>
-            <input type="text" id="customer-contact" placeholder="Твой Telegram @username" value="@">
-            <textarea id="product-request" placeholder="Что именно ты ищешь? Опиши подробнее..."></textarea>
+            <input type="text" id="customer-contact" placeholder="📱 Введите ваш Telegram (например, @username)" value="">
+            <textarea id="product-request" placeholder="Что именно вы ищете? Опишите подробнее..."></textarea>
             <div class="modal-buttons">
                 <button class="cancel-btn" onclick="closeRareOrderModal()">Отмена</button>
                 <button class="submit-btn" onclick="submitRareOrder()">Отправить</button>
@@ -575,7 +573,6 @@
             document.getElementById('reset-btn').style.display = 'none';
         }
         
-        // Функции для увеличения фото
         function openImageModal(imageUrl, productName) {
             if (!imageUrl || imageUrl === '') {
                 showNotification('📦 У этого товара нет фото');
@@ -599,7 +596,6 @@
             document.body.style.overflow = '';
         }
         
-        // Функции для редкого заказа
         function openRareOrderModal() {
             document.getElementById('rare-order-modal').classList.add('active');
         }
@@ -614,7 +610,12 @@
             const request = document.getElementById('product-request').value;
             
             if (!request) {
-                alert('Опиши, что хочешь найти!');
+                alert('Опишите, что вы ищете!');
+                return;
+            }
+            
+            if (!contact) {
+                alert('Укажите ваш Telegram для связи!');
                 return;
             }
             
@@ -637,10 +638,11 @@
             .then(data => {
                 if (data.success) {
                     closeRareOrderModal();
-                    showNotification('✅ Заявка отправлена! Мы свяжемся с тобой');
+                    showNotification('✅ Заявка отправлена! Мы свяжемся с вами');
                     document.getElementById('product-request').value = '';
+                    document.getElementById('customer-contact').value = '';
                 } else {
-                    showNotification('❌ Ошибка, попробуй позже');
+                    showNotification('❌ Ошибка, попробуйте позже');
                 }
             })
             .catch(error => {
@@ -664,7 +666,12 @@
             }, 3000);
         }
         
-        // Закрытие по ESC
+        document.getElementById('rare-order-modal').addEventListener('click', function(e) {
+            if (e.target === this) {
+                closeRareOrderModal();
+            }
+        });
+        
         document.addEventListener('keydown', function(e) {
             if (e.key === 'Escape') {
                 closeImageModal();
@@ -672,7 +679,6 @@
             }
         });
         
-        // Инициализация
         document.addEventListener('DOMContentLoaded', function() {
             const products = document.querySelectorAll('.product-card');
             if (products.length === 0) {
