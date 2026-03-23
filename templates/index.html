@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=yes">
-    <title>ТАБАКМАН</title>
+    <title>ТАБАКМЕН</title>
     <style>
         * {
             margin: 0;
@@ -160,6 +160,7 @@
             font-size: 40px;
             border-bottom: 1px solid #333;
             overflow: hidden;
+            cursor: pointer;
         }
         
         .product-image img {
@@ -197,6 +198,9 @@
             color: #666;
             font-size: 12px;
             margin-top: 4px;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
         }
         
         .rare-order-btn {
@@ -225,7 +229,8 @@
             transform: scale(0.95);
         }
         
-        .image-modal {
+        /* Модальное окно для карточки товара */
+        .product-modal {
             display: none;
             position: fixed;
             top: 0;
@@ -234,6 +239,129 @@
             bottom: 0;
             background: rgba(0,0,0,0.95);
             z-index: 3000;
+            padding: 20px;
+            align-items: center;
+            justify-content: center;
+        }
+        
+        .product-modal.active {
+            display: flex;
+        }
+        
+        .product-modal-content {
+            background: #111;
+            border: 2px solid #ffd700;
+            border-radius: 20px;
+            padding: 25px;
+            width: 100%;
+            max-width: 400px;
+            max-height: 90vh;
+            overflow-y: auto;
+        }
+        
+        .product-modal-header {
+            text-align: center;
+            margin-bottom: 15px;
+        }
+        
+        .product-modal-header h2 {
+            color: #ffd700;
+            font-size: 20px;
+            word-break: break-word;
+        }
+        
+        .product-modal-image {
+            width: 100%;
+            height: 200px;
+            background: #222;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 10px;
+            margin-bottom: 15px;
+            cursor: pointer;
+            overflow: hidden;
+        }
+        
+        .product-modal-image img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+        
+        .product-modal-image span {
+            font-size: 60px;
+            color: #ffd700;
+        }
+        
+        .product-modal-price {
+            color: #ffd700;
+            font-size: 28px;
+            font-weight: bold;
+            text-align: center;
+            margin: 15px 0;
+        }
+        
+        .product-modal-category {
+            color: #888;
+            font-size: 14px;
+            text-align: center;
+            margin-bottom: 15px;
+            padding: 8px;
+            background: #222;
+            border-radius: 20px;
+        }
+        
+        .product-modal-close {
+            position: absolute;
+            top: 10px;
+            right: 10px;
+            color: #ffd700;
+            font-size: 30px;
+            cursor: pointer;
+            background: #222;
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border: 1px solid #ffd700;
+        }
+        
+        .product-modal-close:hover {
+            background: #333;
+        }
+        
+        .order-btn {
+            background: #ffd700;
+            color: #000;
+            border: none;
+            padding: 12px;
+            border-radius: 50px;
+            font-size: 16px;
+            font-weight: bold;
+            width: 100%;
+            cursor: pointer;
+            margin-top: 10px;
+            transition: all 0.3s;
+        }
+        
+        .order-btn:hover {
+            background: #ffed4a;
+            transform: scale(1.02);
+        }
+        
+        /* Модальное окно для увеличения фото */
+        .image-modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0,0,0,0.95);
+            z-index: 4000;
             align-items: center;
             justify-content: center;
             cursor: pointer;
@@ -274,10 +402,7 @@
             border: 1px solid #ffd700;
         }
         
-        .image-modal-close:hover {
-            background: #333;
-        }
-        
+        /* Модальное окно для редкого заказа */
         .modal {
             display: none;
             position: fixed;
@@ -402,14 +527,6 @@
             font-size: 16px;
         }
         
-        .error {
-            grid-column: 1/-1;
-            text-align: center;
-            color: #ff4444;
-            padding: 40px;
-            font-size: 16px;
-        }
-        
         @keyframes slideIn {
             from {
                 transform: translateX(100%);
@@ -424,7 +541,7 @@
 </head>
 <body>
     <div class="header">
-        <h1>🚬 ТАБАКМАН</h1>
+        <h1>🚬 ТАБАКМЕН</h1>
         <div class="subtitle">
             кальяны · жидкости · поды · сигареты
         </div>
@@ -448,8 +565,13 @@
             <div class="product-card" 
                  data-category="{{ product.category.name }}" 
                  data-name="{{ product.name.lower() }}"
-                 onclick="openImageModal('{{ product.image_url }}', '{{ product.name }}')">
-                <div class="product-image">
+                 data-id="{{ product.id }}"
+                 data-name-full="{{ product.name }}"
+                 data-price="{{ product.price }}"
+                 data-image="{{ product.image_url }}"
+                 data-category-full="{{ product.category.name }}"
+                 onclick="openProductModal({{ product.id }})">
+                <div class="product-image" onclick="event.stopPropagation(); openImageModal('{{ product.image_url }}', '{{ product.name }}')">
                     {% if product.image_url and product.image_url != '' %}
                         <img src="{{ product.image_url }}" alt="{{ product.name }}">
                     {% else %}
@@ -473,6 +595,23 @@
     <button class="rare-order-btn" onclick="openRareOrderModal()">
         🔥 Заказать редкое 🔥
     </button>
+    
+    <!-- Модальное окно для карточки товара -->
+    <div class="product-modal" id="product-modal">
+        <div class="product-modal-content">
+            <span class="product-modal-close" onclick="closeProductModal(event)">×</span>
+            <div class="product-modal-header">
+                <h2 id="modal-product-name">Название товара</h2>
+            </div>
+            <div class="product-modal-image" id="modal-product-image" onclick="openImageModalFromProduct()">
+                <span id="modal-image-placeholder">📦</span>
+                <img id="modal-product-img" style="display: none;">
+            </div>
+            <div class="product-modal-price" id="modal-product-price">0 ₽</div>
+            <div class="product-modal-category" id="modal-product-category">Категория</div>
+            <button class="order-btn" onclick="orderFromProductModal()">📞 Заказать</button>
+        </div>
+    </div>
     
     <!-- Модальное окно для увеличения фото -->
     <div class="image-modal" id="image-modal" onclick="closeImageModal()">
@@ -498,6 +637,7 @@
     <script>
         let currentFilter = 'all';
         let searchQuery = '';
+        let currentProductId = null;
         
         function filterProducts(category) {
             currentFilter = category;
@@ -573,6 +713,65 @@
             document.getElementById('reset-btn').style.display = 'none';
         }
         
+        // Открыть карточку товара
+        function openProductModal(productId) {
+            const productCard = document.querySelector(`.product-card[data-id="${productId}"]`);
+            if (!productCard) return;
+            
+            const name = productCard.dataset.nameFull;
+            const price = productCard.dataset.price;
+            const imageUrl = productCard.dataset.image;
+            const category = productCard.dataset.categoryFull;
+            
+            currentProductId = productId;
+            
+            document.getElementById('modal-product-name').textContent = name;
+            document.getElementById('modal-product-price').textContent = price + ' ₽';
+            document.getElementById('modal-product-category').textContent = category;
+            
+            const imgElement = document.getElementById('modal-product-img');
+            const placeholderSpan = document.getElementById('modal-image-placeholder');
+            
+            if (imageUrl && imageUrl !== '') {
+                imgElement.src = imageUrl;
+                imgElement.style.display = 'block';
+                placeholderSpan.style.display = 'none';
+            } else {
+                imgElement.style.display = 'none';
+                placeholderSpan.style.display = 'flex';
+            }
+            
+            document.getElementById('product-modal').classList.add('active');
+            document.body.style.overflow = 'hidden';
+        }
+        
+        function closeProductModal(event) {
+            if (event) event.stopPropagation();
+            document.getElementById('product-modal').classList.remove('active');
+            document.body.style.overflow = '';
+        }
+        
+        function openImageModalFromProduct() {
+            const imgElement = document.getElementById('modal-product-img');
+            const name = document.getElementById('modal-product-name').textContent;
+            
+            if (imgElement.style.display === 'block' && imgElement.src) {
+                openImageModal(imgElement.src, name);
+            } else {
+                showNotification('📦 У этого товара нет фото');
+            }
+        }
+        
+        function orderFromProductModal() {
+            closeProductModal();
+            setTimeout(() => {
+                openRareOrderModal();
+                const requestField = document.getElementById('product-request');
+                const productName = document.getElementById('modal-product-name').textContent;
+                requestField.value = `Хочу заказать: ${productName}`;
+            }, 300);
+        }
+        
         function openImageModal(imageUrl, productName) {
             if (!imageUrl || imageUrl === '') {
                 showNotification('📦 У этого товара нет фото');
@@ -588,9 +787,7 @@
         }
         
         function closeImageModal(event) {
-            if (event) {
-                event.stopPropagation();
-            }
+            if (event) event.stopPropagation();
             const modal = document.getElementById('image-modal');
             modal.classList.remove('active');
             document.body.style.overflow = '';
@@ -666,15 +863,23 @@
             }, 3000);
         }
         
-        document.getElementById('rare-order-modal').addEventListener('click', function(e) {
-            if (e.target === this) {
+        // Закрытие по ESC
+        document.addEventListener('keydown', function(e) {
+            if (e.key === 'Escape') {
+                closeImageModal();
+                closeProductModal();
                 closeRareOrderModal();
             }
         });
         
-        document.addEventListener('keydown', function(e) {
-            if (e.key === 'Escape') {
-                closeImageModal();
+        document.getElementById('product-modal').addEventListener('click', function(e) {
+            if (e.target === this) {
+                closeProductModal();
+            }
+        });
+        
+        document.getElementById('rare-order-modal').addEventListener('click', function(e) {
+            if (e.target === this) {
                 closeRareOrderModal();
             }
         });
