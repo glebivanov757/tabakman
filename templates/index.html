@@ -160,7 +160,6 @@
             font-size: 40px;
             border-bottom: 1px solid #333;
             overflow: hidden;
-            cursor: pointer;
         }
         
         .product-image img {
@@ -352,7 +351,7 @@
             transform: scale(1.02);
         }
         
-        /* Модальное окно для увеличения фото */
+        /* Модальное окно для увеличения фото (из карточки) */
         .image-modal {
             display: none;
             position: fixed;
@@ -571,7 +570,7 @@
                  data-image="{{ product.image_url }}"
                  data-category-full="{{ product.category.name }}"
                  onclick="openProductModal({{ product.id }})">
-                <div class="product-image" onclick="event.stopPropagation(); openImageModal('{{ product.image_url }}', '{{ product.name }}')">
+                <div class="product-image">
                     {% if product.image_url and product.image_url != '' %}
                         <img src="{{ product.image_url }}" alt="{{ product.name }}">
                     {% else %}
@@ -613,7 +612,7 @@
         </div>
     </div>
     
-    <!-- Модальное окно для увеличения фото -->
+    <!-- Модальное окно для увеличения фото (только из карточки) -->
     <div class="image-modal" id="image-modal" onclick="closeImageModal()">
         <div class="image-modal-content">
             <span class="image-modal-close" onclick="closeImageModal(event)">×</span>
@@ -756,10 +755,22 @@
             const name = document.getElementById('modal-product-name').textContent;
             
             if (imgElement.style.display === 'block' && imgElement.src) {
-                openImageModal(imgElement.src, name);
+                const modal = document.getElementById('image-modal');
+                const modalImg = document.getElementById('modal-image');
+                modalImg.src = imgElement.src;
+                modalImg.alt = name;
+                modal.classList.add('active');
+                document.body.style.overflow = 'hidden';
             } else {
                 showNotification('📦 У этого товара нет фото');
             }
+        }
+        
+        function closeImageModal(event) {
+            if (event) event.stopPropagation();
+            const modal = document.getElementById('image-modal');
+            modal.classList.remove('active');
+            document.body.style.overflow = '';
         }
         
         function orderFromProductModal() {
@@ -770,27 +781,6 @@
                 const productName = document.getElementById('modal-product-name').textContent;
                 requestField.value = `Хочу заказать: ${productName}`;
             }, 300);
-        }
-        
-        function openImageModal(imageUrl, productName) {
-            if (!imageUrl || imageUrl === '') {
-                showNotification('📦 У этого товара нет фото');
-                return;
-            }
-            
-            const modal = document.getElementById('image-modal');
-            const modalImg = document.getElementById('modal-image');
-            modalImg.src = imageUrl;
-            modalImg.alt = productName;
-            modal.classList.add('active');
-            document.body.style.overflow = 'hidden';
-        }
-        
-        function closeImageModal(event) {
-            if (event) event.stopPropagation();
-            const modal = document.getElementById('image-modal');
-            modal.classList.remove('active');
-            document.body.style.overflow = '';
         }
         
         function openRareOrderModal() {
